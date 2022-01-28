@@ -1,0 +1,14 @@
+# FILE MANAGED BY ANSIBLE : DO NOT EDIT !!!
+# {{ ansible_managed }}
+{{ odoo_logdir }}/*.log {
+        daily
+        dateext
+        rotate 15
+        missingok
+        notifempty
+        compress
+        delaycompress
+        create 640 root adm
+        sharedscripts
+        copytruncate
+}

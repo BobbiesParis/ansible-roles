@@ -1,0 +1,64 @@
+---
+
+- name: Check if nodejs is already installed (Debian)
+  command: dpkg -l nodejs
+  become: yes
+  ignore_errors: yes
+  register: nodejs_deb_package
+  when: ansible_os_family == 'Debian'
+
+- name: Check if nodejs is already installed (RedHat)
+  command: rpm -q nodejs
+  become: yes
+  ignore_errors: yes
+  register: nodejs_rpm_package
+  when: ansible_os_family == 'RedHat'
+
+- name: Download nodejs sources
+  get_url:
+    url: "{{ odoo_nodejs_source }}"
+    dest: /tmp
+    mode: u+x
+  register: node_script
+  when: nodejs_deb_package is failed or nodejs_rpm_package is failed
+
+- name: Install nodejs sources
+  shell: "{{ node_script.dest }}"
+  when: nodejs_deb_package is failed or nodejs_rpm_package is failed
+
+- name: Install nodejs (Debian)
+  apt:
+    name: nodejs
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install nodejs (RedHat)
+  yum:
+    name: nodejs
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Check that '/usr/bin/nodejs' exists
+  stat:
+    path: /usr/bin/nodejs
+  register: nodejs_executable
+
+- name: Check that '/usr/local/bin/node' exists
+  stat:
+    path: /usr/local/bin/node
+  register: node_executable
+
+- name: Add symlink '/usr/local/bin/node'
+  file:
+    src: /usr/bin/nodejs
+    dest: /usr/local/bin/node
+    state: link
+  when: nodejs_executable.stat.exists and not node_executable.stat.exists
+
+- name: Install Odoo dependencies (npm)
+  npm:
+    name: "{{ item }}"
+    global: yes
+  with_flattened:
+    - "{{ odoo_npm_packages | default([]) }}"
+    - "{{ odoo_extra_npm_packages | default([]) }}"

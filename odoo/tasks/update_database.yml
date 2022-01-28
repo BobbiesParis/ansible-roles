@@ -1,0 +1,112 @@
+---
+
+- name: Retrieve the deployment revision from the database
+  postgresql_query:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_config_db_user }}"
+    login_password: "{{ odoo_config_db_password }}"
+    db: "{{ odoo_config_db_name }}"
+    query: SELECT value FROM ir_config_parameter WHERE key = %(key)s
+    named_args:
+      key: deployment_id
+  register: db_query
+
+- name: Retrieve the deployment revision from the database query
+  set_fact:
+    old_deployment_id: "{{ db_query.query_result and db_query.query_result[0]['value'] or '' }}"
+
+- name: Check if need to update the database
+  set_fact:
+    to_update: True
+  when:
+    - new_deployment_id
+    - old_deployment_id != new_deployment_id
+
+- name: Run the database update
+  block:
+    - name: Backup database and filestore
+      include_tasks:
+        file: backup_create.yml
+        apply:
+          tags: backup
+      when: odoo_backup_database
+      tags:
+        - backup
+
+    - name: Get the last line of the log file
+      shell: tail -n 1 {{ odoo_update_logfile | quote }} | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
+      register: start_point
+
+    - name: Launch the database update in multi-threading mode
+      command:
+        argv:
+          - /usr/bin/python3
+          - "{{ odoo_bin }}"
+          - --config={{ odoo_config_file }}
+          - --update={{ odoo_update_modules }}
+          - --logfile={{ odoo_update_logfile }}
+          - --workers=0
+          - --stop-after-init
+        chdir: "{{ odoo_workdir }}"
+      ignore_errors: yes  # Ignore "Running as user 'root' is a security risk."
+      notify: Restart Odoo
+
+    - name: Check if database update failed
+      set_fact:
+        update_failed: "{{ odoo_update_logfile | regex_search('^({{ start_point.stdout }}.*(\n.*)*.*(Failed to initialize database).*)$') }}"
+
+    - name: Restore backup if update failed
+      include_tasks:
+        file: backup_restore.yml
+        apply:
+          tags: backup
+      when:
+        - update_failed
+        - odoo_backup_database
+      tags:
+        - backup
+
+    - name: Delete backup
+      include_tasks:
+        file: backup_remove.yml
+        apply:
+          tags: backup
+      when: odoo_backup_database
+      tags:
+        - backup
+
+    - name: Fail playbook if database update failed
+      fail:
+        msg: "Odoo upgrade failed"
+      when: update_failed
+  when: to_update is defined or odoo_force_update_database
+
+- name: Add the deployment revision in the database if not exists
+  postgresql_query:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_config_db_user }}"
+    login_password: "{{ odoo_config_db_password }}"
+    db: "{{ odoo_config_db_name }}"
+    query: INSERT INTO ir_config_parameter (key, value) VALUES (%(key)s, %(value)s)
+    named_args:
+      key: deployment_id
+      value: "{{ new_deployment_id }}"
+  when: to_update is defined and not old_deployment_id
+
+- name: Update the deployment revision in the database if exists
+  postgresql_query:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_config_db_user }}"
+    login_password: "{{ odoo_config_db_password }}"
+    db: "{{ odoo_config_db_name }}"
+    query: UPDATE ir_config_parameter SET value = %(value)s WHERE key = %(key)s
+    named_args:
+      key: deployment_id
+      value: "{{ new_deployment_id }}"
+  when: to_update is defined and old_deployment_id

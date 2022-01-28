@@ -1,0 +1,38 @@
+---
+
+- name: Setting variables depending on the distribution release and Odoo version
+  include_vars: "{{ item }}"
+  with_first_found:
+    - files:
+        - "{{ ansible_distribution }}_{{ ansible_distribution_major_version | int }}-Odoo_{{ odoo_version }}.yml"     # CentOS-6
+        - "{{ ansible_os_family }}_{{ ansible_distribution_major_version | int }}-Odoo_{{ odoo_version }}.yml"        # RedHat-6
+        - "{{ ansible_distribution }}-Odoo_{{ odoo_version }}.yml"                                                    # CentOS
+        - "{{ ansible_os_family }}-Odoo_{{ odoo_version }}.yml"                                                       # RedHat
+      paths: "../vars"
+  tags:
+    - always
+
+- name: Install required packages
+  include_tasks:
+    file: install.yml
+    apply:
+      tags: packages
+  when: odoo_install_packages
+  tags:
+    - packages
+
+- name: Configure Odoo, PostgreSQL and Nginx
+  include_tasks:
+    file: configure.yml
+    apply:
+      tags: configuration
+  tags:
+    - configuration
+
+- name: Deploy the new version of Odoo
+  include_tasks:
+    file: update.yml
+    apply:
+      tags: application
+  tags:
+    - application

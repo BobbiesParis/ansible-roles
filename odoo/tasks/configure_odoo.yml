@@ -1,0 +1,24 @@
+---
+
+- name: Create Odoo configuration file directory
+  file:
+    path: "{{ odoo_config_file | dirname }}"
+    state: directory
+    mode: 0755
+    owner: "{{ odoo_sources_owner }}"
+    group: "{{ odoo_user }}"
+
+- name: Setup Odoo configuration file
+  template:
+    src: "{{ item }}"
+    dest: "{{ odoo_config_file }}"
+    owner: "{{ odoo_sources_owner }}"
+    group: "{{ odoo_user }}"
+    mode: 0660
+    force: "{{ odoo_config_force and 'yes' or 'no' }}"
+    backup: yes
+  with_first_found:
+    - files:
+        - "odoo-{{ odoo_version }}.conf"
+        - "odoo.conf"
+      paths: "../templates"

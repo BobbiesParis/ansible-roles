@@ -1,0 +1,14 @@
+---
+
+- name: Create log directory
+  file:
+    path: "{{ odoo_logdir }}"
+    state: directory
+    owner: "{{ odoo_user }}"
+    group: "{{ odoo_user }}"
+    force: no
+
+- name: Setup logrotate configuration file
+  template:
+    src: logrotate.j2
+    dest: "/etc/logrotate.d/{{ odoo_service }}"

@@ -1,0 +1,16 @@
+---
+
+- name: Restart Odoo
+  service:
+    name: "{{ odoo_service }}"
+    state: restarted
+  become: yes
+  when:
+    - odoo_init
+    - odoo_restart
+
+- name: Restart Nginx
+  service:
+    name: nginx
+    state: restarted
+  become: yes

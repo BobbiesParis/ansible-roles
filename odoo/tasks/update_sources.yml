@@ -1,0 +1,70 @@
+---
+
+- name: Check if the Odoo directory exists
+  stat:
+    path: "{{ odoo_rootdir }}"
+  register: root_path
+
+- name: Update Odoo sources
+  block:
+    - name: Check if the Odoo repository is already cloned
+      stat:
+        path: "{{ odoo_rootdir }}/.git"
+      register: git_path
+
+    - name: Delete the Odoo directory if it is not a git directory
+      file:
+        path: "{{ odoo_rootdir }}"
+        state: absent
+      when:
+        - root_path.stat.exists
+        - not git_path.stat.exists
+
+    - name: Clone/Pull Odoo git repository
+      git:
+        repo: "{{ odoo_repo_url }}"
+        dest: "{{ odoo_repo_dest }}"
+        version: "{{ odoo_repo_rev | string }}"
+        update: "{{ root_path.stat.exists == False and 'yes' or (odoo_repo_update and 'yes' or 'no') }}"
+        depth: "{{ odoo_repo_depth }}"
+        accept_hostkey: yes
+        force: yes
+        single_branch: "{{ odoo_repo_single_branch }}"
+  when:
+    - odoo_update_sources
+    - odoo_repo_type == 'git'
+    - odoo_repo_url
+
+- name: Check again if the Odoo directory exists
+  stat:
+    path: "{{ odoo_rootdir }}"
+  register: root_path
+
+- name: Force timestamp to midnight
+  command: find {{ odoo_rootdir }} \! -type l -exec touch -m -d "00:00:00" {} +
+  when: root_path.stat.exists
+
+- name: Change the owner of Odoo directory
+  file:
+    path: "{{ odoo_rootdir }}"
+    owner: "{{ odoo_sources_owner }}"
+    group: "{{ odoo_user }}"
+    recurse: yes
+  when: root_path.stat.exists
+  ignore_errors: yes
+  notify: Restart Odoo
+
+- name: Make odoo-bin executable
+  file:
+    path: "{{ odoo_workdir }}/{{ odoo_bin }}"
+    mode: g+x
+  ignore_errors: yes
+
+- name: Change the owner of Odoo data directory
+  file:
+    path: "{{ odoo_config_data_dir }}"
+    state: directory
+    owner: "{{ odoo_user }}"
+    group: "{{ odoo_user }}"
+    force: no
+  ignore_errors: yes

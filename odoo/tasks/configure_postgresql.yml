@@ -1,0 +1,69 @@
+---
+
+- name: Install Ansible postgresql dependencies (Debian)
+  apt:
+    name: python3-psycopg2
+    state: present
+  when:
+    - ansible_os_family == 'Debian'
+    - odoo_postgresql_set_user or odoo_postgresql_active_unaccent
+
+- name: Install Ansible postgresql dependencies (RedHat)
+  yum:
+    name: python3-psycopg2
+    state: present
+  when:
+    - ansible_os_family == 'RedHat'
+    - odoo_postgresql_set_user or odoo_postgresql_active_unaccent
+
+- name: PostgreSQL - Add or update the database user without password
+  postgresql_user:
+    name: "{{ odoo_config_db_user }}"
+    role_attr_flags: "{{ odoo_postgresql_user_role_attr }}"
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+  ignore_errors: yes
+  when:
+    - odoo_postgresql_set_user
+    - not odoo_config_db_password
+
+- name: PostgreSQL - Add or update the database user with password
+  postgresql_user:
+    name: "{{ odoo_config_db_user }}"
+    role_attr_flags: "{{ odoo_postgresql_user_role_attr }}"
+    password: "{{ odoo_config_db_password }}"
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+  ignore_errors: yes
+  when:
+    - odoo_postgresql_set_user
+    - odoo_config_db_password
+
+- name: PostgreSQL - Grant privileges
+  postgresql_membership:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+    groups: "{{ odoo_config_db_user }}"
+    target_roles: "{{ odoo_postgresql_login_user }}"
+  when:
+    - odoo_postgresql_set_user
+
+- name: PostgreSQL - Activate the 'unaccent' extension on databases
+  postgresql_ext:
+    name: unaccent
+    db: "{{ odoo_config_db_template }}"
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+  when: odoo_postgresql_active_unaccent

@@ -1,0 +1,33 @@
+---
+
+- name: Install nginx (Debian)
+  apt:
+    name: nginx
+    state: latest
+    install_recommends: no
+    update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Install nginx (RedHat)
+  yum:
+    name: nginx
+    state: latest
+    update_cache: yes
+  when: ansible_os_family == 'RedHat'
+
+- name: Setup maintenance page
+  template:
+    src: maintenance.html
+    dest: "{{ odoo_nginx_document_root }}"
+
+- name: Setup site configuration file
+  template:
+    src: nginx.conf
+    dest: /etc/nginx/sites-available/default
+
+- name: Enable new site
+  file:
+    src: /etc/nginx/sites-available/default
+    dest: /etc/nginx/sites-enabled/default
+    state: link
+  notify: Restart Nginx

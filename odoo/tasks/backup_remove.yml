@@ -1,0 +1,15 @@
+---
+
+- name: Delete database backup file
+  file:
+    path: "{{ odoo_update_database_backup }}"
+    state: absent
+  ignore_errors: yes
+  when: odoo_delete_database_backup
+
+- name: Delete filestore copy
+  file:
+    path: "{{ odoo_update_datadir_backup }}"
+    state: absent
+  ignore_errors: yes
+  when: odoo_delete_datadir_backup

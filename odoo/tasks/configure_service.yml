@@ -1,0 +1,34 @@
+---
+
+- name: Generate odoo init script
+  template:
+    src: odoo.init
+    dest: /etc/init.d/{{ odoo_service }}
+    owner: root
+    group: root
+    mode: 0755
+    force: "{{ odoo_config_force and 'yes' or 'no' }}"
+    backup: yes
+  when: odoo_init
+  notify: Restart Odoo
+
+- name: Reload systemd
+  systemd:
+    daemon-reload: yes
+  when: ansible_service_mgr == 'systemd'
+
+- name: Enable odoo service
+  service:
+    name: "{{ odoo_service }}"
+    enabled: yes
+    state: started
+  become: yes
+  when: odoo_init
+
+- name: Disable odoo service
+  service:
+    name: "{{ odoo_service }}"
+    enabled: no
+    state: stopped
+  become: yes
+  when: odoo_init

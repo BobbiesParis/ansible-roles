@@ -1,0 +1,32 @@
+---
+
+- name: Update APT cache (Debian)
+  apt:
+    cache_valid_time: 86400
+    update_cache: True
+  when: ansible_os_family == 'Debian'
+
+- name: Install system packages
+  include_tasks:
+    file: install_system_packages.yml
+    apply:
+      tags: packages
+
+- name: Install PyPI packages
+  include_tasks:
+    file: install_pip_packages.yml
+    apply:
+      tags: packages
+
+- name: Install NodeJS packages
+  include_tasks:
+    file: install_npm_packages.yml
+    apply:
+      tags: packages
+
+- name: Install wkhtmltopdf
+  include_tasks:
+    file: install_wkhtmltopdf.yml
+    apply:
+      tags: packages
+  when: odoo_wkhtmltox_url is defined

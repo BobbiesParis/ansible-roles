@@ -1,0 +1,93 @@
+---
+
+- name: Activate the maintenance mode
+  file:
+    path: "{{ odoo_nginx_document_root }}/maintenance.on"
+    state: touch
+
+- name: Stop Odoo
+  service:
+    name: "{{ odoo_service }}"
+    state: stopped
+  become: yes
+
+- name: Update source files
+  include_tasks:
+    file: update_sources.yml
+    apply:
+      tags: application
+
+- name: Delete old lock
+  file:
+    path: "{{ odoo_update_lockdir }}"
+    state: absent
+  when: odoo_delete_old_lock
+
+- name: Try to put a lock
+  file:
+    path: "{{ odoo_update_lockdir }}"
+    state: directory
+  register: lock_dir
+
+- name: Update the database by the lock owner
+  block:
+    - name: Clone source database
+      include_tasks:
+        file: clone_create.yml
+        apply:
+          tags:
+            - clone
+            - application
+      when:
+        - odoo_clone_database
+      tags:
+        - clone
+
+    - name: Check if the database exists
+      postgresql_ping:
+        login_host: "{{ odoo_config_db_host }}"
+        port: "{{ odoo_config_db_port | int }}"
+        ssl_mode: "{{ odoo_config_db_sslmode }}"
+        login_user: "{{ odoo_config_db_user }}"
+        login_password: "{{ odoo_config_db_password }}"
+        db: "{{ odoo_config_db_name }}"
+      register: database
+
+    - name: Update database
+      include_tasks:
+        file: update_database.yml
+        apply:
+          tags: application
+      when:
+        - database.is_available
+        - odoo_update_database
+
+    - name: Notify Odoo restart
+      command: /bin/true
+      when:
+        - not database.is_available or not odoo_update_database
+      notify: Restart Odoo
+  always:
+    - name: Delete the lock
+      file:
+        path: "{{ odoo_update_lockdir }}"
+        state: absent
+  when: lock_dir.changed
+
+- name: Wait until the lock is deleted
+  wait_for:
+    path: "{{ odoo_update_lockdir }}"
+    state: absent
+    delay: "{{ odoo_update_wait_delay | int }}"
+    sleep: "{{ odoo_update_wait_sleep | int }}"
+    timeout: "{{ odoo_update_wait_timeout | int }}"
+  when: not lock_dir.changed
+  notify: Restart Odoo
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Deactivate the maintenance mode
+  file:
+    path: "{{ odoo_nginx_document_root }}/maintenance.on"
+    state: absent

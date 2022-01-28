@@ -1,0 +1,31 @@
+---
+
+- name: Restore backuped database
+  postgresql_db:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+    owner: "{{ odoo_config_db_user }}"
+    name: "{{ odoo_config_db_name }}"
+    state: restore
+    target: "{{ odoo_update_database_backup }}"
+    target_opts: "--clean --create"
+
+- name: Restore backuped filestore
+  synchronize:
+    archive: yes
+    compress: no
+    delete: yes
+    recursive: yes
+    links: yes
+    group: yes
+    owner: yes
+    src: "{{ odoo_update_datadir_backup }}/{{ item }}/"
+    dest: "{{ odoo_config_data_dir }}/{{ item }}/"
+  loop:
+    - addons
+    - filestore
+  delegate_to: "{{ inventory_hostname }}"
+  when: odoo_backup_filestore

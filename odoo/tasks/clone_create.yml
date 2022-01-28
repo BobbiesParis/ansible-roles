@@ -1,0 +1,123 @@
+---
+
+- name: Backup database
+  postgresql_db:
+    login_host: "{{ odoo_clone_src_db_host }}"
+    port: "{{ odoo_clone_src_db_port | int }}"
+    ssl_mode: "{{ odoo_clone_src_db_sslmode }}"
+    login_user: "{{ odoo_clone_src_db_user }}"
+    login_password: "{{ odoo_clone_src_db_password }}"
+    name: "{{ odoo_clone_src_db_name }}"
+    state: dump
+    target: "{{ odoo_clone_src_db_backup }}"
+    target_opts: "--no-owner"
+
+# We have to delete and then recreate the database
+# because if we use --clean --create as arguments to pg_restore,
+# all data is restored to the database name that appears in the archive.
+
+- name: Kill all sessions before deleting old database
+  postgresql_query:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+    db: "{{ odoo_config_db_name }}"
+    query: SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s AND pid <> pg_backend_pid()
+    positional_args:
+      - "{{ odoo_config_db_name }}"
+
+- name: Delete old database
+  postgresql_db:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+    name: "{{ odoo_config_db_name }}"
+    state: absent
+
+- name: Create new database to restore dump
+  postgresql_db:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_postgresql_login_user }}"
+    login_password: "{{ odoo_postgresql_login_password }}"
+    owner: "{{ odoo_config_db_user }}"
+    name: "{{ odoo_config_db_name }}"
+    template: "{{ odoo_config_db_template }}"
+    state: present
+
+# We need to restore the database with odoo_config_db_user,
+# not with odoo_postgresql_login_user,
+# beause:
+# 1. target_opts: ["--no-owner", "--role={{ odoo_config_db_user }}"] failed
+# 2. all objects of the database will be assigned to login_user
+# even with the option owner (only the owner of the database is changed,
+#   not the owner of all the objects inside)
+# and we can't reassign all objects afterwards with the postgresql_owner module
+# without changing the owner of all databases it owns.
+
+- name: Restore database
+  postgresql_db:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_config_db_user }}"
+    login_password: "{{ odoo_config_db_password }}"
+    name: "{{ odoo_config_db_name }}"
+    state: restore
+    target: "{{ odoo_clone_src_db_backup }}"
+
+- name: Check if a SQL script exists
+  stat:
+    path: "{{ odoo_clone_dest_db_script }}"
+  register: db_script
+
+- name: Run queries from SQL script
+  postgresql_db:
+    login_host: "{{ odoo_config_db_host }}"
+    port: "{{ odoo_config_db_port | int }}"
+    ssl_mode: "{{ odoo_config_db_sslmode }}"
+    login_user: "{{ odoo_config_db_user }}"
+    login_password: "{{ odoo_config_db_password }}"
+    name: "{{ odoo_config_db_name }}"
+    state: restore
+    target: "{{ odoo_clone_dest_db_script }}"
+  when: db_script.stat.exists
+
+- name: Delete database backup file
+  file:
+    path: "{{ odoo_clone_src_db_backup }}"
+    state: absent
+  ignore_errors: yes
+
+- name: Create a filestore copy
+  block:
+    - name: Copy the addons folder
+      synchronize:
+        archive: yes
+        compress: no
+        delete: yes
+        recursive: yes
+        links: yes
+        src: "{{ odoo_clone_src_data_dir }}/addons/"
+        dest: "{{ odoo_config_data_dir }}/addons/"
+        rsync_opts:
+          - "--chown={{ odoo_user }}:{{ odoo_user }}"
+
+    - name: Copy the filestore folder
+      synchronize:
+        archive: yes
+        compress: no
+        delete: yes
+        recursive: yes
+        links: yes
+        src: "{{ odoo_clone_src_data_dir }}/filestore/{{ odoo_clone_src_db_name }}/"
+        dest: "{{ odoo_config_data_dir }}/filestore/{{ odoo_config_db_name }}/"
+        rsync_opts:
+          - "--chown={{ odoo_user }}:{{ odoo_user }}"
+  delegate_to: "{{ inventory_hostname }}"
+  when: odoo_clone_filestore

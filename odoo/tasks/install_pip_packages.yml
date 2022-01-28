@@ -1,0 +1,23 @@
+---
+
+- name: Upgrade pip
+  pip:
+    name: pip
+    executable: "{{ pip_executable }}"
+    extra_args: --upgrade
+
+- name: Install Odoo dependencies (pip)
+  pip:
+    name: "{{ query('flattened', ['{{ odoo_pip_packages | default([]) }}', '{{ odoo_extra_pip_packages | default([]) }}']) }}"
+    executable: "{{ pip_executable }}"
+
+- name: Check if a PIP requirements file exists
+  stat:
+    path: "{{ odoo_extra_pip_requirements }}"
+  register: pip_requirements
+
+- name: Install Odoo dependencies (pip requirements)
+  pip:
+    requirements: "{{ odoo_extra_pip_requirements }}"
+    executable: "{{ pip_executable }}"
+  when: pip_requirements.stat.exists
