@@ -12,6 +12,7 @@ odoo_bin: odoo-bin
 # ansible_en.USER = ansible_user in the case of a remote connection
 # but ansible_en.USER is also defined in the case of a local connection
 odoo_sources_owner: "{{ ansible_env.USER }}"
+odoo_stop_timeout: 5
 
 # Project repository to deploy
 odoo_repo_type: git     # Only Git is currently supported

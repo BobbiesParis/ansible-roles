@@ -32,6 +32,7 @@ odoo_rootdir | "/home/{{ odoo_user }}/{{ odoo_service }}"
 odoo_workdir | "{{ odoo_rootdir }}"
 odoo_bin | "odoo-bin"
 odoo_sources_owner | "{{ ansible_env.USER }}"
+odoo_stop_timeout | 5
 odoo_repo_type | git
 odoo_repo_url | "https://github.com/odoo/odoo.git"
 odoo_repo_dest | "{{ odoo_rootdir }}"

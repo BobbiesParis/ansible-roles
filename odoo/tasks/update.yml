@@ -6,9 +6,26 @@
     state: touch
 
 - name: Stop Odoo
-  service:
-    name: "{{ odoo_service }}"
-    state: stopped
+  block:
+    - name: Stop Odoo service
+      service:
+        name: "{{ odoo_service }}"
+        state: stopped
+
+    - name: Wait for Odoo to stop
+      wait_for:
+        timeout: "{{ odoo_stop_timeout | int }}"
+
+    - name: Check if Odoo is stopped
+      command: pgrep -fc {{ odoo_service | quote }}
+      register: running_odoo_processes
+      failed_when: not running_odoo_processes.stdout
+
+    - name: Force stop Odoo
+      command: pkill -f {{ odoo_service | quote }}
+      when:
+        - running_odoo_processes is defined
+        - ( running_odoo_processes.stdout | int ) > 0
   become: yes
 
 - name: Update source files
