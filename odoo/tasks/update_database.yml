@@ -56,11 +56,12 @@
           - --config={{ odoo_config_file }}
           - --update={{ odoo_update_modules }}
           - --logfile={{ odoo_update_logfile }}
+          - --log-handler=:INFO
+          - --log-level=info
           - --workers=0
           - --stop-after-init
         chdir: "{{ odoo_workdir }}"
-      become: yes
-      become_user: odoo
+      ignore_errors: yes  # Ignore "Running as user 'root' is a security risk."
       notify: Restart Odoo
 
     - name: Check if database update failed
@@ -91,6 +92,15 @@
       fail:
         msg: "Odoo upgrade failed"
       when: update_failed
+  always:
+    - name: Change the owner of Odoo log file
+      file:
+        path: "{{ odoo_update_logfile }}"
+        owner: "{{ odoo_user }}"
+        group: "{{ odoo_user }}"
+        force: yes
+      ignore_errors: yes
+      when: odoo_update_logfile == (odoo_logrotate and odoo_logfile or odoo_config_logfile)
   when: to_update is defined or odoo_force_update_database
 
 - name: Add the deployment revision in the database if not exists
