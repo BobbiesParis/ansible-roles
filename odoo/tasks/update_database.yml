@@ -50,7 +50,8 @@
           - --workers=0
           - --stop-after-init
         chdir: "{{ odoo_workdir }}"
-      ignore_errors: yes  # Ignore "Running as user 'root' is a security risk."
+      become: yes
+      become_user: odoo
       notify: Restart Odoo
 
     - name: Check if database update failed
