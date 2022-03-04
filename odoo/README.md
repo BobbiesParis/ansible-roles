@@ -39,6 +39,7 @@ odoo_repo_rev | "{{ odoo_version }}"
 odoo_repo_update | yes
 odoo_repo_depth | 1
 odoo_repo_single_branch | yes
+odoo_repo_revision_file | "{{ odoo_rootdir }}/.gitrevision"
 odoo_config_file | "/etc/{{ odoo_service }}/server.conf"
 odoo_config_force | True
 odoo_config_addons_path | "{ odoo_workdir }}/addons"
@@ -137,7 +138,6 @@ odoo_clone_src_db_password |
 odoo_clone_src_db_name |  
 odoo_clone_src_db_backup | "/tmp/{{ odoo_clone_src_db_name }}-{{ ansible_date_time.date }}.dump"
 odoo_clone_src_data_dir |  
-new_deployment_id | "{{ lookup('env', 'DEPLOYMENT_ID') }}"
 
 Precisions
 * odoo_config_custom: to add new options - _e.g.: upgrades_path = /home/odoo/odoo/upgrades_

@@ -25,6 +25,7 @@ odoo_repo_update: yes   # Update the working copy or not. This option is
 odoo_repo_depth: 1      # Set to 0 to clone the full history (slower)
                         # (this option is supported only with git)
 odoo_repo_single_branch: yes
+odoo_repo_revision_file: "{{ odoo_rootdir }}/.gitrevision"
 
 # Odoo configuration file
 odoo_config_file: "/etc/{{ odoo_service }}/server.conf"
@@ -135,7 +136,6 @@ odoo_clone_src_db_password:
 odoo_clone_src_db_name:  
 odoo_clone_src_db_backup: "/tmp/{{ odoo_clone_src_db_name }}-{{ ansible_date_time.date }}.sql"
 odoo_clone_src_data_dir:  
-new_deployment_id: "{{ lookup('env', 'DEPLOYMENT_ID') }}"
 
 # In addition to tags
 odoo_install_packages: True

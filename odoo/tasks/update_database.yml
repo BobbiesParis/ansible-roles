@@ -17,6 +17,15 @@
   set_fact:
     old_deployment_id: "{{ db_query.query_result and db_query.query_result[0]['value'] or '' }}"
 
+- name: Retrieve the deployement revision from the source code
+  shell:
+    cmd: cat {{ odoo_repo_revision_file }}
+  register: revision_file
+
+- name: Retrieve the deployement revision from the source code
+  set_fact:
+    new_deployment_id: "{{ revision_file.stdout }}"
+
 - name: Check if need to update the database
   set_fact:
     to_update: True
