@@ -114,6 +114,8 @@ odoo_logfile | "{{ odoo_logdir }}/server.log"
 odoo_maintenance_team | "Odoo IT team"
 odoo_nginx_document_root | "/var/www/html/"
 odoo_nginx_server_name | "_"
+odoo_nginx_timeout | 720s
+odoo_nginx_client_max_body_size | 25M
 odoo_postgresql_set_user | True
 odoo_postgresql_user_role_attr | CREATEDB,NOSUPERUSER
 odoo_postgresql_active_unaccent | True
