@@ -1,37 +1,44 @@
 ---
 
-- name: Retrieve the deployment revision from the database
-  postgresql_query:
-    login_host: "{{ odoo_config_db_host }}"
-    port: "{{ odoo_config_db_port | int }}"
-    ssl_mode: "{{ odoo_config_db_sslmode }}"
-    login_user: "{{ odoo_config_db_user }}"
-    login_password: "{{ odoo_config_db_password }}"
-    db: "{{ odoo_config_db_name }}"
-    query: SELECT value FROM ir_config_parameter WHERE key = %(key)s
-    named_args:
-      key: deployment_id
-  register: db_query
+- name: Retrieve the database version
+  block:
+    - postgresql_query:
+        login_host: "{{ odoo_config_db_host }}"
+        port: "{{ odoo_config_db_port | int }}"
+        ssl_mode: "{{ odoo_config_db_sslmode }}"
+        login_user: "{{ odoo_config_db_user }}"
+        login_password: "{{ odoo_config_db_password }}"
+        db: "{{ odoo_config_db_name }}"
+        query: SELECT value FROM ir_config_parameter WHERE key = %(key)s
+        named_args:
+          key: code.version
+      register: db_query
+    - set_fact:
+        db_version: "{{ db_query.query_result and db_query.query_result[0]['value'] or '' }}"
 
-- name: Retrieve the deployment revision from the database query
+- name: Read the release file
+  block:
+    - shell:
+        cmd: cat {{ odoo_update_release_file }}
+      register: release_file
+    - set_fact:
+        release: "{{ release_file.stdout | from_yaml }}"
+  when: odoo_update_release_file
+
+- name: Retrieve the code version
   set_fact:
-    old_deployment_id: "{{ db_query.query_result and db_query.query_result[0]['value'] or '' }}"
+    code_version: "{{ release is defined and release.version or odoo_update_version }}"
 
-- name: Retrieve the deployement revision from the source code
-  shell:
-    cmd: cat {{ odoo_repo_revision_file }}
-  register: revision_file
-
-- name: Retrieve the deployement revision from the source code
+- name: Retrieve the modules to update
   set_fact:
-    new_deployment_id: "{{ revision_file.stdout }}"
+    modules_to_update: "{{ release is defined and release.modules or odoo_update_modules }}"
 
 - name: Check if need to update the database
   set_fact:
     to_update: True
   when:
-    - new_deployment_id
-    - old_deployment_id != new_deployment_id
+    - code_version
+    - db_version != code_version
 
 - name: Run the database update
   block:
@@ -54,7 +61,7 @@
           - /usr/bin/python3
           - "{{ odoo_bin }}"
           - --config={{ odoo_config_file }}
-          - --update={{ odoo_update_modules }}
+          - --update={{ modules_to_update }}
           - --logfile={{ odoo_update_logfile }}
           - --log-handler=:INFO
           - --log-level=info
@@ -101,7 +108,9 @@
         force: yes
       ignore_errors: yes
       when: odoo_update_logfile == (odoo_logrotate and odoo_logfile or odoo_config_logfile)
-  when: to_update is defined or odoo_force_update_database
+  when:
+    - to_update is defined or odoo_force_update_database
+    - modules_to_update
 
 - name: Add the deployment revision in the database if not exists
   postgresql_query:
@@ -113,9 +122,9 @@
     db: "{{ odoo_config_db_name }}"
     query: INSERT INTO ir_config_parameter (key, value) VALUES (%(key)s, %(value)s)
     named_args:
-      key: deployment_id
-      value: "{{ new_deployment_id }}"
-  when: to_update is defined and not old_deployment_id
+      key: code.version
+      value: "{{ code_version }}"
+  when: to_update is defined and not db_version
 
 - name: Update the deployment revision in the database if exists
   postgresql_query:
@@ -127,6 +136,6 @@
     db: "{{ odoo_config_db_name }}"
     query: UPDATE ir_config_parameter SET value = %(value)s WHERE key = %(key)s
     named_args:
-      key: deployment_id
-      value: "{{ new_deployment_id }}"
-  when: to_update is defined and old_deployment_id
+      key: code.version
+      value: "{{ code_version }}"
+  when: to_update is defined and db_version
