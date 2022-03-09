@@ -51,6 +51,11 @@
       tags:
         - backup
 
+    - name: Make sure the log file exists
+      file:
+        path: "{{ odoo_update_logfile }}"
+        state: touch
+
     - name: Get the last line of the log file
       shell: tail -n 1 {{ odoo_update_logfile | quote }} | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
       register: start_point
@@ -71,9 +76,13 @@
       ignore_errors: yes  # Ignore "Running as user 'root' is a security risk."
       notify: Restart Odoo
 
+    - name: Get update logs
+      shell: cat {{ odoo_update_logfile | quote }}
+      register: update_logs
+
     - name: Check if database update failed
       set_fact:
-        update_failed: "{{ odoo_update_logfile | regex_search('^({{ start_point.stdout }}.*(\n.*)*.*(Failed to initialize database).*)$') }}"
+        update_failed: "{{ update_logs.stdout | regex_search(start_point.stdout + '.*(\n.*)*.*Failed to initialize database') }}"
 
     - name: Restore backup if update failed
       include_tasks:
