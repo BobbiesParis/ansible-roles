@@ -34,5 +34,6 @@
     file: update.yml
     apply:
       tags: application
+  when: odoo_update_application
   tags:
     - application

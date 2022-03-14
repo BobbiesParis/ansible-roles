@@ -169,6 +169,7 @@ odoo_set_nginx | True
 odoo_set_postgresql | True
 odoo_set_service | True
 odoo_set_user| True
+odoo_update_application | True
 odoo_update_database | True
 odoo_update_sources | True
 odoo_backup_database | True
