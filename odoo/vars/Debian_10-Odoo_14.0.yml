@@ -3,14 +3,14 @@
 pip_executable: pip3
 
 odoo_required_tools:
-    - sudo
-    - rsync
     - git
+    - gnupg2
     - python3-pip
+    - rsync
+    - sudo
 
 odoo_system_packages:
     - fonts-noto-cjk
-    - postgresql-client
     - python3-lxml
     - python3-pil
     - python3-psutil

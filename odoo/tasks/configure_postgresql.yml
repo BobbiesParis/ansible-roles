@@ -1,6 +1,48 @@
 ---
 
-- name: Install Ansible postgresql dependencies (Debian)
+- name: Add the PostgreSQL signing key (Debian)
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  when:
+    - ansible_os_family == 'Debian'
+
+- name: Add the PostgreSQL repository into sources list (Debian)
+  apt_repository:
+    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+    state: present
+  when:
+    - ansible_os_family == 'Debian'
+
+- name: Add the PostgreSQL repository into sources list (RedHat)
+  yum_repository:
+    name: "pgdg{{ odoo_postgresql_version or '' }}"
+    base_url: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}/pgdg-redhat-repo-latest.noarch.rpm"
+    state: present
+  when:
+    - ansible_os_family == 'RedHat'
+
+- name: Update APT cache (Debian)
+  apt:
+    cache_valid_time: 86400
+    update_cache: True
+  when: ansible_os_family == 'Debian'
+
+- name: Install PostgreSQL client (Debian)
+  apt:
+    name: "postgresql-client{{ odoo_postgresql_version and '-%s' % odoo_postgresql_version or '' }}"
+    state: present
+  when:
+    - ansible_os_family == 'Debian'
+
+- name: Install PostgreSQL client (RedHat)
+  yum:
+    name: "postgresql{{ odoo_postgresql_version or '' }}"
+    state: present
+  when:
+    - ansible_os_family == 'RedHat'
+
+- name: Install Ansible PostgreSQL dependencies (Debian)
   apt:
     name: python3-psycopg2
     state: present
@@ -8,7 +50,7 @@
     - ansible_os_family == 'Debian'
     - odoo_postgresql_set_user or odoo_postgresql_active_unaccent
 
-- name: Install Ansible postgresql dependencies (RedHat)
+- name: Install Ansible PostgreSQL dependencies (RedHat)
   yum:
     name: python3-psycopg2
     state: present
