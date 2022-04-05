@@ -38,7 +38,7 @@
     to_update: True
   when:
     - code_version
-    - db_version != code_version
+    - code_version is version(db_version, '>')
 
 - name: Run the database update
   block:
