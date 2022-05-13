@@ -111,6 +111,14 @@ odoo_logrotate |  True
 odoo_logdir | "/var/log/{{ odoo_service }}"
 odoo_logfile | "{{ odoo_logdir }}/server.log"
 odoo_maintenance_team | "Odoo IT team"
+odoo_newrelic_account_id |  
+odoo_newrelic_api_key |  
+odoo_newrelic_app_name | Odoo
+odoo_newrelic_config_file | "{{ odoo_config_file | dirname }}/newrelic.ini"
+odoo_newrelic_environment | production
+odoo_newrelic_license_key |  
+odoo_newrelic_log_file | "/var/log/newrelic/python-agent.log"
+odoo_newrelic_region | EU
 odoo_nginx_document_root | "/var/www/html/"
 odoo_nginx_server_name | "_"
 odoo_nginx_timeout | 720s
@@ -166,6 +174,7 @@ Variable | Default value
 odoo_install_packages | True
 odoo_set_configuration | True
 odoo_set_logrotate | True
+odoo_set_newrelic | False
 odoo_set_nginx | True
 odoo_set_postgresql | True
 odoo_set_service | True

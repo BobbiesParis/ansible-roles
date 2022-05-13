@@ -22,3 +22,4 @@
         - "odoo-{{ odoo_version }}.conf"
         - "odoo.conf"
       paths: "../templates"
+  notify: Restart Odoo

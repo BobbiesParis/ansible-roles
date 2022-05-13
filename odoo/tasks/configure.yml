@@ -30,6 +30,14 @@
       tags: configuration
   when: odoo_set_configuration
 
+- name: Configure NewRelic
+  include_tasks:
+    file: configure_newrelic.yml
+    apply:
+      tags: packages
+  when:
+    - odoo_set_newrelic
+
 - name: Configure Nginx
   include_tasks:
     file: configure_nginx.yml
