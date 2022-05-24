@@ -54,7 +54,7 @@ odoo_config_db_port | 5432
 odoo_config_db_sslmode | prefer
 odoo_config_db_template | template1
 odoo_config_db_user | "{{ odoo_user }}"
-odoo_config_dbfilter | "{{ odoo_config_db_name or '' }}"
+odoo_config_dbfilter | "{{ odoo_config_db_name and '^' + odoo_config_db_name + '$' or '' }}"
 odoo_config_demo | {}
 odoo_config_email_from | False
 odoo_config_geoip_database | /usr/share/GeoIP/GeoLite2-City.mmdb
