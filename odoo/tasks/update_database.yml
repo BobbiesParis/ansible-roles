@@ -77,12 +77,12 @@
       notify: Restart Odoo
 
     - name: Get update logs
-      shell: cat {{ odoo_update_logfile | quote }}
-      register: update_logs
+      shell: cat {{ odoo_update_logfile | quote }} | grep 'Failed to initialize database' | tail -n 1 | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
+      register: end_point
 
     - name: Check if database update failed
       set_fact:
-        update_failed: "{{ update_logs.stdout | regex_search(start_point.stdout + '.*(\n.*)*.*Failed to initialize database') }}"
+        update_failed: "{{ end_point.stdout and end_point.stdout > start_point.stdout }}"
 
     - name: Restore backup if update failed
       include_tasks:
