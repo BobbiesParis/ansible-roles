@@ -104,7 +104,7 @@ odoo_config_custom | {}
 odoo_config_groups_custom | {}
 odoo_extra_system_packages | []
 odoo_extra_pip_packages | []
-odoo_extra_pip_requirements |  
+odoo_extra_pip_requirements | "{{ odoo_rootdir }}/requirements.txt"
 odoo_extra_npm_packages | []
 odoo_extra_tools | []
 odoo_logrotate |  True

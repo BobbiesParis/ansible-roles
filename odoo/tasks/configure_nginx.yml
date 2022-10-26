@@ -17,8 +17,11 @@
 
 - name: Setup maintenance page
   template:
-    src: maintenance.html
+    src: "{{ item }}"
     dest: "{{ odoo_nginx_document_root }}"
+  loop:
+    - maintenance.html
+    - maintenance.json
 
 - name: Setup site configuration file
   template:

@@ -1,0 +1,6 @@
+{
+    "error" : {
+        "code": 503,
+        "message": "Service temporarily unavailable due to maintenance of the Odoo application"
+    }
+}
