@@ -1,0 +1,5 @@
+# FILE MANAGED BY ANSIBLE : DO NOT EDIT !!!
+# {{ ansible_managed }}
+[Definition]
+failregex = ^\s*\d+ INFO \S+ \S+ Login failed for db:\S+ login:\S+ from <HOST>
+ignoreregex =  

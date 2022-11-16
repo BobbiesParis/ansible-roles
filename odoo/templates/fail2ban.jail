@@ -1,0 +1,9 @@
+# FILE MANAGED BY ANSIBLE : DO NOT EDIT !!!
+# {{ ansible_managed }}
+[odoo-login]
+enabled = true
+port = http,https
+bantime = 900 ; 15 min
+banmaxretry = 5 ; if 5 attempts
+findtime = 7260 ; within 1 min
+logpath = {{ odoo_logfile }}

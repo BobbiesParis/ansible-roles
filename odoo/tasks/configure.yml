@@ -45,6 +45,13 @@
       tags: configuration
   when: odoo_set_nginx
 
+- name: Configure fail2ban
+  include_tasks:
+    file: configure_fail2ban.yml
+    apply:
+      tags: configuration
+  when: odoo_set_fail2ban
+
 - name: Configure service
   include_tasks:
     file: configure_service.yml

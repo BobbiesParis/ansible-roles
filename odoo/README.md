@@ -119,10 +119,11 @@ odoo_newrelic_environment | production
 odoo_newrelic_license_key |  
 odoo_newrelic_log_file | "/var/log/newrelic/python-agent.log"
 odoo_newrelic_region | EU
+odoo_nginx_client_max_body_size | 25M
 odoo_nginx_document_root | "/var/www/html/"
 odoo_nginx_server_name | "_"
 odoo_nginx_timeout | 720s
-odoo_nginx_client_max_body_size | 25M
+odoo_nginx_trusted_ip |  
 odoo_postgresql_version | 13
 odoo_postgresql_set_user | True
 odoo_postgresql_user_role_attr | CREATEDB,NOSUPERUSER
@@ -173,6 +174,7 @@ Variable | Default value
 ---------|--------------
 odoo_install_packages | True
 odoo_set_configuration | True
+odoo_set_fail2ban | True
 odoo_set_logrotate | True
 odoo_set_newrelic | False
 odoo_set_nginx | True

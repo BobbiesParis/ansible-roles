@@ -1,0 +1,32 @@
+---
+
+- name: Install fail2ban (Debian)
+  apt:
+    name: fail2ban
+    state: latest
+    install_recommends: no
+    update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Install fail2ban (RedHat)
+  yum:
+    name: fail2ban
+    state: latest
+    update_cache: yes
+  when: ansible_os_family == 'RedHat'
+
+- name: Setup configuration files
+  block:
+    - copy:
+        src: /etc/fail2ban/jail.conf
+        dest: /etc/fail2ban/jail.local
+        remote_src: yes        
+    - blockinfile:
+        insertafter: EOF
+        path: /etc/fail2ban/jail.local
+        block: "{{ lookup('template', 'fail2ban.jail') }}"
+        marker: ""
+    - template:
+        src: fail2ban.filter
+        dest: /etc/fail2ban/filter.d/odoo-login.local
+  notify: Restart fail2ban

@@ -115,10 +115,11 @@ odoo_newrelic_region: EU
 
 # Nginx configuration
 odoo_maintenance_team: "Odoo IT team"
+odoo_nginx_client_max_body_size: 25M
 odoo_nginx_document_root: "/var/www/html/"
 odoo_nginx_server_name: "_"
 odoo_nginx_timeout: 720s
-odoo_nginx_client_max_body_size: 25M
+odoo_nginx_trusted_ips:  
 
 # Tasks related to PostgreSQL
 odoo_postgresql_version: 13
@@ -155,6 +156,7 @@ odoo_clone_src_data_dir:
 # In addition to tags
 odoo_install_packages: True
 odoo_set_configuration: True
+odoo_set_fail2ban: True
 odoo_set_logrotate: True
 odoo_set_newrelic: False
 odoo_set_nginx: True
