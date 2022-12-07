@@ -29,4 +29,4 @@
     - template:
         src: fail2ban.filter
         dest: /etc/fail2ban/filter.d/odoo-login.local
-  notify: Restart fail2ban
+      notify: Restart fail2ban
