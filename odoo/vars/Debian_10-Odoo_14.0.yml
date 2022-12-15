@@ -73,5 +73,5 @@ odoo_wkhtmltox_depends:
     - python3-renderpm
     - xz-utils
 
-odoo_nodejs_source: "https://deb.nodesource.com/setup_17.x"
+odoo_nodejs_source: "https://deb.nodesource.com/setup_19.x"
 odoo_wkhtmltox_url: "{{ 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_%s.deb' % ((ansible_architecture == 'aarch64' and 'arm64') or ('64' in ansible_architecture and 'amd64') or 'i386') }}"
