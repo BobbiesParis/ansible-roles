@@ -138,8 +138,6 @@ odoo_update_database_backup | "/tmp/{{ odoo_config_db_name }}-{{ ansible_date_ti
 odoo_update_lockdir | "{{ odoo_config_data_dir }}/.lock"
 odoo_update_logfile | "{{ odoo_logrotate and odoo_logfile or odoo_config_logfile }}"
 odoo_update_modules | all
-odoo_update_release_file | "{{ odoo_rootdir }}/release.yml"
-odoo_update_version |  
 odoo_update_wait_delay | 0
 odoo_update_wait_sleep | 5
 odoo_update_wait_timeout | 900
@@ -157,7 +155,6 @@ Precisions
 * odoo_config_custom: to add new options - _e.g.: upgrades_path = /home/odoo/odoo/upgrades_
 * odoo_config_groups_custom: to add new option groups - _e.g.: [queue_job]
 channel = root:2_
-* odoo_update_release_file: to override odoo_update_version and odoo_update_modules variables
 
 ## Available tags
 
@@ -188,7 +185,6 @@ odoo_backup_database | True
 odoo_backup_filestore | True (only if odoo_backup_database)
 odoo_clone_database | False
 odoo_clone_filestore | True (only if odoo_clone_database)
-odoo_force_update_database | False
 
 ## Available handlers
 

@@ -1,45 +1,5 @@
 ---
 
-- name: Retrieve the database version
-  block:
-    - postgresql_query:
-        login_host: "{{ odoo_config_db_host }}"
-        port: "{{ odoo_config_db_port | int }}"
-        ssl_mode: "{{ odoo_config_db_sslmode }}"
-        login_user: "{{ odoo_config_db_user }}"
-        login_password: "{{ odoo_config_db_password }}"
-        db: "{{ odoo_config_db_name }}"
-        query: SELECT value FROM ir_config_parameter WHERE key = %(key)s
-        named_args:
-          key: code.version
-      register: db_query
-    - set_fact:
-        db_version: "{{ db_query.query_result and db_query.query_result[0]['value'] or '' }}"
-
-- name: Read the release file
-  block:
-    - shell:
-        cmd: cat {{ odoo_update_release_file }}
-      register: release_file
-    - set_fact:
-        release: "{{ release_file.stdout | from_yaml }}"
-  when: odoo_update_release_file
-
-- name: Retrieve the code version
-  set_fact:
-    code_version: "{{ release is defined and release.version or odoo_update_version }}"
-
-- name: Retrieve the modules to update
-  set_fact:
-    modules_to_update: "{{ release is defined and release.modules or odoo_update_modules }}"
-
-- name: Check if need to update the database
-  set_fact:
-    to_update: True
-  when:
-    - code_version
-    - code_version is version(db_version, '>')
-
 - name: Run the database update
   block:
     - name: Backup database and filestore
@@ -66,18 +26,19 @@
           - /usr/bin/python3
           - "{{ odoo_bin }}"
           - --config={{ odoo_config_file }}
-          - --update={{ modules_to_update }}
+          - "{{ odoo_update_modules and '--update=%s' % odoo_update_modules or '--no-http' }}"
           - --logfile={{ odoo_update_logfile }}
           - --log-handler=:INFO
           - --log-level=info
           - --workers=0
           - --stop-after-init
         chdir: "{{ odoo_workdir }}"
-      ignore_errors: yes  # Ignore "Running as user 'root' is a security risk."
+      register: ret
+      failed_when: ret.stderr and ret.stderr != "Running as user 'root' is a security risk."
       notify: Restart Odoo
 
     - name: Get update logs
-      shell: cat {{ odoo_update_logfile | quote }} | grep 'Failed to initialize database' | tail -n 1 | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
+      shell: cat {{ odoo_update_logfile | quote }} | grep 'Failed to initialize database\|Upgrade FAILED' | tail -n 1 | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
       register: end_point
 
     - name: Check if database update failed
@@ -117,34 +78,3 @@
         force: yes
       ignore_errors: yes
       when: odoo_update_logfile == (odoo_logrotate and odoo_logfile or odoo_config_logfile)
-  when:
-    - to_update is defined or odoo_force_update_database
-    - modules_to_update
-
-- name: Add the deployment revision in the database if not exists
-  postgresql_query:
-    login_host: "{{ odoo_config_db_host }}"
-    port: "{{ odoo_config_db_port | int }}"
-    ssl_mode: "{{ odoo_config_db_sslmode }}"
-    login_user: "{{ odoo_config_db_user }}"
-    login_password: "{{ odoo_config_db_password }}"
-    db: "{{ odoo_config_db_name }}"
-    query: INSERT INTO ir_config_parameter (key, value) VALUES (%(key)s, %(value)s)
-    named_args:
-      key: code.version
-      value: "{{ code_version }}"
-  when: to_update is defined and not db_version
-
-- name: Update the deployment revision in the database if exists
-  postgresql_query:
-    login_host: "{{ odoo_config_db_host }}"
-    port: "{{ odoo_config_db_port | int }}"
-    ssl_mode: "{{ odoo_config_db_sslmode }}"
-    login_user: "{{ odoo_config_db_user }}"
-    login_password: "{{ odoo_config_db_password }}"
-    db: "{{ odoo_config_db_name }}"
-    query: UPDATE ir_config_parameter SET value = %(value)s WHERE key = %(key)s
-    named_args:
-      key: code.version
-      value: "{{ code_version }}"
-  when: to_update is defined and db_version
