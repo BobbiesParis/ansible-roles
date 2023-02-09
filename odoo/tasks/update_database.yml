@@ -1,5 +1,32 @@
 ---
 
+- name: Check if need to update the database
+  block:
+    - postgresql_query:
+        login_host: "{{ odoo_config_db_host }}"
+        port: "{{ odoo_config_db_port | int }}"
+        ssl_mode: "{{ odoo_config_db_sslmode }}"
+        login_user: "{{ odoo_config_db_user }}"
+        login_password: "{{ odoo_config_db_password }}"
+        db: "{{ odoo_config_db_name }}"
+        query: SELECT value FROM ir_config_parameter WHERE key = %(key)s
+        named_args:
+          key: code.version
+      register: db_query
+
+    - set_fact:
+        db_version: "{{ db_query.query_result and db_query.query_result[0]['value'] or '' }}"
+
+    - set_fact:
+        code_version: "{{ lookup('ini', 'version section=options file=' + odoo_update_release_file) }}"
+
+    - set_fact:
+        to_update: True
+      when:
+        - code_version
+        - code_version is version(db_version, '>')
+  when: odoo_update_release_file
+
 - name: Run the database update
   block:
     - name: Backup database and filestore
@@ -78,3 +105,5 @@
         force: yes
       ignore_errors: yes
       when: odoo_update_logfile == (odoo_logrotate and odoo_logfile or odoo_config_logfile)
+  when:
+    - to_update is defined or odoo_update_modules

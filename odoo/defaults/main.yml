@@ -135,6 +135,7 @@ odoo_update_database_backup: "/tmp/{{ odoo_config_db_name }}-{{ ansible_date_tim
 odoo_update_lockdir: "{{ odoo_config_data_dir }}/.lock"
 odoo_update_logfile: "{{ odoo_logrotate and odoo_logfile or odoo_config_logfile }}"
 odoo_update_modules: all
+odoo_update_release_file: 
 odoo_update_wait_delay: 0
 odoo_update_wait_sleep: 5
 odoo_update_wait_timeout: 900
