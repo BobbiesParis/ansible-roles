@@ -15,6 +15,14 @@
     update_cache: yes
   when: ansible_os_family == 'RedHat'
 
+- name: Create Nginx cache directory
+  file:
+    path: "{{ odoo_nginx_cache_folder | dirname }}"
+    state: directory
+    mode: 0775
+    owner: "www-data"
+    group: "www-data"
+
 - name: Setup maintenance page
   template:
     src: "{{ item }}"
