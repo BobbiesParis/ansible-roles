@@ -24,11 +24,3 @@
     state: started
   become: yes
   when: odoo_init
-
-- name: Disable odoo service
-  service:
-    name: "{{ odoo_service }}"
-    enabled: no
-    state: stopped
-  become: yes
-  when: odoo_init
