@@ -135,7 +135,7 @@ odoo_delete_database_backup | True
 odoo_delete_datadir_backup | False
 odoo_delete_old_lock | False
 odoo_update_datadir_backup | "{{ odoo_config_data_dir }}/../backup"
-odoo_update_database_backup | "/tmp/{{ odoo_config_db_name }}-{{ ansible_date_time.date }}.sql"
+odoo_update_database_backup | "/tmp/{{ odoo_config_db_name }}-{{ ansible_date_time.iso8601_basic_short }}.sql"
 odoo_update_lockdir | "{{ odoo_config_data_dir }}/.lock"
 odoo_update_logfile | "{{ odoo_logrotate and odoo_logfile or odoo_config_logfile }}"
 odoo_update_modules | all
@@ -150,7 +150,7 @@ odoo_clone_src_db_sslmode |
 odoo_clone_src_db_user |  
 odoo_clone_src_db_password |  
 odoo_clone_src_db_name |  
-odoo_clone_src_db_backup | "/tmp/{{ odoo_clone_src_db_name }}-{{ ansible_date_time.date }}.dump"
+odoo_clone_src_db_backup | "/tmp/{{ odoo_clone_src_db_name }}-{{ ansible_date_time.iso8601_basic_short }}.dump"
 odoo_clone_src_data_dir |  
 
 Precisions
@@ -203,4 +203,4 @@ This role provides an handler which restart Odoo. You can use it in your own tas
 
 ## Roadmap
 
-* Support for Amazon Linux 2022
+* Support for Debian 11
