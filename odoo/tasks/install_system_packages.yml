@@ -1,25 +1,24 @@
 ---
-
 - name: Install required tools (Debian)
-  apt:
-    name: "{{ query('flattened', ['{{ odoo_required_tools | default([]) }}', '{{ odoo_extra_tools | default([]) }}']) }}"
-    state: present
   when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
+    name: "{{ (odoo_required_tools | default([])) + (odoo_extra_tools | default([])) | flatten }}"
+    state: present
 
 - name: Install required tools (RedHat)
-  yum:
-    name: "{{ query('flattened', ['{{ odoo_required_tools | default([]) }}', '{{ odoo_extra_tools | default([]) }}']) }}"
-    state: present
   when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum:
+    name: "{{ (odoo_required_tools | default([])) + (odoo_extra_tools | default([])) | flatten }}"
+    state: present
 
 - name: Install Odoo dependencies (Debian)
-  apt:
-    name: "{{ query('flattened', ['{{ odoo_system_packages | default([]) }}', '{{ odoo_extra_system_packages | default([]) }}']) }}"
-    state: present
   when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
+    name: "{{ (odoo_system_packages | default([])) + (odoo_extra_system_packages | default([])) | flatten }}"
+    state: present
 
 - name: Install Odoo dependencies (RedHat)
-  yum:
-    name: "{{ query('flattened', ['{{ odoo_system_packages | default([]) }}', '{{ odoo_extra_system_packages | default([]) }}']) }}"
-    state: present
   when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum:
+    name: "{{ (odoo_system_packages | default([])) + (odoo_extra_system_packages | default([])) | flatten }}"
+    state: present

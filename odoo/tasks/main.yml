@@ -1,7 +1,6 @@
 ---
-
 - name: Setting variables depending on the distribution release and Odoo version
-  include_vars: "{{ item }}"
+  ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
     - files:
         - "{{ ansible_distribution }}_{{ ansible_distribution_major_version | int }}-Odoo_{{ odoo_version }}.yml"     # CentOS-6
@@ -13,7 +12,7 @@
     - always
 
 - name: Install required packages
-  include_tasks:
+  ansible.builtin.include_tasks:
     file: install.yml
     apply:
       tags: packages
@@ -22,7 +21,7 @@
     - packages
 
 - name: Configure Odoo, PostgreSQL and Nginx
-  include_tasks:
+  ansible.builtin.include_tasks:
     file: configure.yml
     apply:
       tags: configuration
@@ -30,10 +29,10 @@
     - configuration
 
 - name: Deploy the new version of Odoo
-  include_tasks:
+  when: odoo_update_application
+  ansible.builtin.include_tasks:
     file: update.yml
     apply:
       tags: application
-  when: odoo_update_application
   tags:
     - application

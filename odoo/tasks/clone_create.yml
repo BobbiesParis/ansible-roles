@@ -1,7 +1,6 @@
 ---
-
 - name: Backup database
-  postgresql_db:
+  community.postgresql.postgresql_db:
     login_host: "{{ odoo_clone_src_db_host }}"
     port: "{{ odoo_clone_src_db_port | int }}"
     ssl_mode: "{{ odoo_clone_src_db_sslmode }}"
@@ -17,7 +16,7 @@
 # all data is restored to the database name that appears in the archive.
 
 - name: Kill all sessions before deleting old database
-  postgresql_query:
+  community.postgresql.postgresql_query:
     login_host: "{{ odoo_config_db_host }}"
     port: "{{ odoo_config_db_port | int }}"
     ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -29,7 +28,7 @@
       - "{{ odoo_config_db_name }}"
 
 - name: Delete old database
-  postgresql_db:
+  community.postgresql.postgresql_db:
     login_host: "{{ odoo_config_db_host }}"
     port: "{{ odoo_config_db_port | int }}"
     ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -39,7 +38,7 @@
     state: absent
 
 - name: Create new database to restore dump
-  postgresql_db:
+  community.postgresql.postgresql_db:
     login_host: "{{ odoo_config_db_host }}"
     port: "{{ odoo_config_db_port | int }}"
     ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -61,7 +60,7 @@
 # without changing the owner of all databases it owns.
 
 - name: Restore database
-  postgresql_db:
+  community.postgresql.postgresql_db:
     login_host: "{{ odoo_config_db_host }}"
     port: "{{ odoo_config_db_port | int }}"
     ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -72,12 +71,13 @@
     target: "{{ odoo_clone_src_db_backup }}"
 
 - name: Check if a SQL script exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ odoo_clone_dest_db_script }}"
   register: db_script
 
 - name: Run queries from SQL script
-  postgresql_db:
+  when: db_script.stat.exists
+  community.postgresql.postgresql_db:
     login_host: "{{ odoo_config_db_host }}"
     port: "{{ odoo_config_db_port | int }}"
     ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -86,38 +86,38 @@
     name: "{{ odoo_config_db_name }}"
     state: restore
     target: "{{ odoo_clone_dest_db_script }}"
-  when: db_script.stat.exists
 
 - name: Delete database backup file
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_clone_src_db_backup }}"
     state: absent
-  ignore_errors: yes
+  ignore_errors: true
+  register: ignore_errors_odoo_delete_db_backup
 
 - name: Create a filestore copy
+  when: odoo_clone_filestore
+  delegate_to: "{{ inventory_hostname }}"
   block:
     - name: Copy the addons folder
-      synchronize:
-        archive: yes
-        compress: no
-        delete: yes
-        recursive: yes
-        links: yes
+      ansible.posix.synchronize:
+        archive: true
+        compress: false
+        delete: true
+        recursive: true
+        links: true
         src: "{{ odoo_clone_src_data_dir }}/addons/"
         dest: "{{ odoo_config_data_dir }}/addons/"
         rsync_opts:
           - "--chown={{ odoo_user }}:{{ odoo_user }}"
 
     - name: Copy the filestore folder
-      synchronize:
-        archive: yes
-        compress: no
-        delete: yes
-        recursive: yes
-        links: yes
+      ansible.posix.synchronize:
+        archive: true
+        compress: false
+        delete: true
+        recursive: true
+        links: true
         src: "{{ odoo_clone_src_data_dir }}/filestore/{{ odoo_clone_src_db_name }}/"
         dest: "{{ odoo_config_data_dir }}/filestore/{{ odoo_config_db_name }}/"
         rsync_opts:
           - "--chown={{ odoo_user }}:{{ odoo_user }}"
-  delegate_to: "{{ inventory_hostname }}"
-  when: odoo_clone_filestore

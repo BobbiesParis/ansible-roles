@@ -1,67 +1,66 @@
 ---
-
 - name: Activate the maintenance mode
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_nginx_document_root }}/maintenance.on"
     state: touch
 
 - name: Stop Odoo
   block:
     - name: Stop Odoo service
-      service:
+      ansible.builtin.service:
         name: "{{ odoo_service }}"
         state: stopped
 
     - name: Wait for Odoo to stop
-      wait_for:
+      ansible.builtin.wait_for:
         timeout: "{{ odoo_stop_timeout | int }}"
 
     - name: Check if Odoo is stopped
-      command: pgrep -fc {{ odoo_service | quote }}
+      ansible.builtin.command: pgrep -fc {{ odoo_bin | quote }}
       register: running_odoo_processes
       failed_when: not running_odoo_processes.stdout
 
     - name: Force stop Odoo
-      command: pkill -f {{ odoo_service | quote }}
+      ansible.builtin.command: pkill -f {{ odoo_bin | quote }}
       when:
         - running_odoo_processes is defined
         - ( running_odoo_processes.stdout | int ) > 0
-  become: yes
+  become: true
 
 - name: Update source files
-  include_tasks:
+  ansible.builtin.include_tasks:
     file: update_sources.yml
     apply:
       tags: application
 
 - name: Delete old lock
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_update_lockdir }}"
     state: absent
   when: odoo_delete_old_lock
 
 - name: Try to put a lock
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_update_lockdir }}"
     state: directory
   register: lock_dir
 
 - name: Update the database by the lock owner
+  when: lock_dir.changed
   block:
     - name: Clone source database
-      include_tasks:
+      when: odoo_clone_database
+      ansible.builtin.include_tasks:
         file: clone_create.yml
         apply:
           tags:
             - clone
             - application
-      when:
-        - odoo_clone_database
       tags:
         - clone
 
     - name: Check if the database exists
-      postgresql_ping:
+      community.postgresql.postgresql_ping:
         login_host: "{{ odoo_config_db_host }}"
         port: "{{ odoo_config_db_port | int }}"
         ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -71,40 +70,38 @@
       register: database
 
     - name: Update database
-      include_tasks:
-        file: update_database.yml
-        apply:
-          tags: application
       when:
         - database.is_available
         - odoo_update_database
+      ansible.builtin.include_tasks:
+        file: update_database.yml
+        apply:
+          tags: application
 
     - name: Notify Odoo restart
-      command: /bin/true
-      when:
-        - not database.is_available or not odoo_update_database
+      when: not database.is_available or not odoo_update_database
+      ansible.builtin.command: /bin/true
       notify: Restart Odoo
   always:
     - name: Delete the lock
-      file:
+      ansible.builtin.file:
         path: "{{ odoo_update_lockdir }}"
         state: absent
-  when: lock_dir.changed
 
 - name: Wait until the lock is deleted
-  wait_for:
+  when: not lock_dir.changed
+  ansible.builtin.wait_for:
     path: "{{ odoo_update_lockdir }}"
     state: absent
     delay: "{{ odoo_update_wait_delay | int }}"
     sleep: "{{ odoo_update_wait_sleep | int }}"
     timeout: "{{ odoo_update_wait_timeout | int }}"
-  when: not lock_dir.changed
   notify: Restart Odoo
 
 - name: Flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Deactivate the maintenance mode
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_nginx_document_root }}/maintenance.on"
     state: absent

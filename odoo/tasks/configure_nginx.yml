@@ -1,44 +1,45 @@
 ---
-
 - name: Install nginx (Debian)
-  apt:
-    name: nginx
-    state: latest
-    install_recommends: no
-    update_cache: yes
   when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    install_recommends: false
+    update_cache: true
 
 - name: Install nginx (RedHat)
-  yum:
-    name: nginx
-    state: latest
-    update_cache: yes
   when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum:
+    name: nginx
+    state: present
+    update_cache: true
 
 - name: Create Nginx cache directory
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_nginx_cache_folder | dirname }}"
     state: directory
-    mode: 0775
+    mode: "u=rwx,g=rwx,o=rx"
     owner: "www-data"
     group: "www-data"
 
 - name: Setup maintenance page
-  template:
+  ansible.builtin.template:
     src: "{{ item }}"
     dest: "{{ odoo_nginx_document_root }}"
+    mode: "u=rw,g=r,o=r"
   loop:
     - maintenance.html
     - maintenance.json
 
 - name: Setup site configuration file
-  template:
+  ansible.builtin.template:
     src: nginx.conf
     dest: /etc/nginx/sites-available/default
+    mode: "u=rw,g=r,o=r"
   notify: Restart Nginx
 
 - name: Enable new site
-  file:
+  ansible.builtin.file:
     src: /etc/nginx/sites-available/default
     dest: /etc/nginx/sites-enabled/default
     state: link

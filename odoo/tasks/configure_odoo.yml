@@ -1,22 +1,21 @@
 ---
-
 - name: Create Odoo configuration file directory
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_config_file | dirname }}"
     state: directory
-    mode: 0755
+    mode: "u=rwx,g=rx,o=rx"
     owner: "{{ odoo_sources_owner }}"
     group: "{{ odoo_user }}"
 
 - name: Setup Odoo configuration file
-  template:
+  ansible.builtin.template:
     src: "{{ item }}"
     dest: "{{ odoo_config_file }}"
     owner: "{{ odoo_sources_owner }}"
     group: "{{ odoo_user }}"
-    mode: 0660
-    force: "{{ odoo_config_force and 'yes' or 'no' }}"
-    backup: yes
+    mode: "u=rw,g=rw,o="
+    force: "{{ odoo_config_force }}"
+    backup: true
   with_first_found:
     - files:
         - "odoo-{{ odoo_version }}.conf"

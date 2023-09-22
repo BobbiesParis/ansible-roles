@@ -1,13 +1,13 @@
 ---
-
 pip_executable: pip3
 
 odoo_required_tools:
     - git
     - gnupg2
-    - python3-pip
+    - python3-virtualenv
     - rsync
     - sudo
+    - virtualenv
 
 odoo_system_packages:
     - fonts-noto-cjk
@@ -74,4 +74,5 @@ odoo_wkhtmltox_depends:
     - xz-utils
 
 odoo_nodejs_source: "https://deb.nodesource.com/setup_19.x"
-odoo_wkhtmltox_url: "{{ 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_%s.deb' % ((ansible_architecture == 'aarch64' and 'arm64') or ('64' in ansible_architecture and 'amd64') or 'i386') }}"
+odoo_wkhtmltox_arch: "{{ (ansible_architecture == 'aarch64' and 'arm64') or ('64' in ansible_architecture and 'amd64') or 'i386' }}"
+odoo_wkhtmltox_url: "{{ 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_%s.deb' % odoo_wkhtmltox_arch }}"

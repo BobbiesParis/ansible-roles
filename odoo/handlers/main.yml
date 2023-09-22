@@ -1,22 +1,21 @@
 ---
-
 - name: Restart Odoo
-  service:
-    name: "{{ odoo_service }}"
-    state: restarted
-  become: yes
   when:
     - odoo_init
     - odoo_restart
+  ansible.builtin.service:
+    name: "{{ odoo_service }}"
+    state: restarted
+  become: true
 
 - name: Restart Nginx
-  service:
+  ansible.builtin.service:
     name: nginx
     state: restarted
-  become: yes
+  become: true
 
 - name: Restart fail2ban
-  service:
+  ansible.builtin.service:
     name: fail2ban
     state: restarted
-  become: yes
+  become: true

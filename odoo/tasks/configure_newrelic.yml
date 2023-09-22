@@ -1,36 +1,41 @@
 ---
-
 - name: Install the NewRelic Python agent (pip)
-  pip:
+  ansible.builtin.pip:
     name: newrelic
     executable: "{{ pip_executable }}"
 
 - name: Create a NewRelic logs directory
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_newrelic_log_file | dirname }}"
     state: directory
     owner: "{{ odoo_user }}"
     group: "{{ odoo_user }}"
-    force: no
+    mode: "u=rwx,g=rx,o=rx"
+    force: false
 
 - name: Setup the NewRelic configuration file
-  template:
+  when: odoo_newrelic_license_key is defined
+  ansible.builtin.template:
     src: newrelic.ini
     dest: "{{ odoo_newrelic_config_file }}"
-  when:
-    - odoo_newrelic_license_key is defined
+    mode: "u=rw,g=r,o=r"
   notify: Restart Odoo
 
 - name: Check if the NewRelic Infrastructure agent exists
-  stat:
+  ansible.builtin.stat:
     path: /usr/local/bin/newrelic
   register: newrelic_infra_agent
 
 - name: Install the NewRelic Infrastructure agent (shell)
-  shell: curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && NEW_RELIC_API_KEY={{ odoo_newrelic_api_key }} NEW_RELIC_ACCOUNT_ID={{ odoo_newrelic_account_id }} NEW_RELIC_REGION={{ odoo_newrelic_region }} /usr/local/bin/newrelic install -y -n logs-integration
-  become: yes
   when:
     - not newrelic_infra_agent.stat.exists
     - odoo_newrelic_account_id is defined
     - odoo_newrelic_api_key is defined
     - odoo_newrelic_region is defined
+  ansible.builtin.shell: >
+    curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash &&
+    NEW_RELIC_API_KEY={{ odoo_newrelic_api_key }}
+    NEW_RELIC_ACCOUNT_ID={{ odoo_newrelic_account_id }}
+    NEW_RELIC_REGION={{ odoo_newrelic_region }}
+    /usr/local/bin/newrelic install -y -n logs-integration
+  become: true

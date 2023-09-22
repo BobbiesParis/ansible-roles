@@ -1,50 +1,33 @@
 ---
-
-- name: Check if wkhtmltopdf is already installed (Debian)
-  command: dpkg -l wkhtmltopdf
-  become: yes
-  ignore_errors: yes
-  register: wkhtmltopdf_deb_package
-  when: ansible_os_family == 'Debian'
-
-- name: Check if wkhtmltopdf is already installed (RedHat)
-  command: rpm -q wkhtmltopdf
-  become: yes
-  ignore_errors: yes
-  register: wkhtmltopdf_rpm_package
-  when: ansible_os_family == 'RedHat'
-
-- name: Download wkhtmltopdf
-  get_url:
-    url: "{{ odoo_wkhtmltox_url }}"
-    dest: /tmp
-  ignore_errors: yes
-  register: wkhtmltopdf_download
-  when: wkhtmltopdf_deb_package is failed or wkhtmltopdf_rpm_package is failed
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
 
 - name: Install wkhtmltopdf dependencies (Debian)
-  apt:
+  when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
     name: "{{ odoo_wkhtmltox_depends }}"
     state: present
-  when: ansible_os_family == 'Debian'
 
 - name: Install wkhtmltopdf dependencies (RedHat)
-  yum:
+  when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum:
     name: "{{ odoo_wkhtmltox_depends }}"
     state: present
-  when: ansible_os_family == 'RedHat'
 
 - name: Install wkhtmltopdf (Debian)
-  apt:
-    deb: "{{ wkhtmltopdf_download.dest }}"
-    force: yes
   when:
-    - wkhtmltopdf_deb_package is failed
     - ansible_os_family == 'Debian'
+    - "'wkhtmltopdf' not in ansible_facts.packages"
+  ansible.builtin.apt:
+    deb: "{{ odoo_wkhtmltox_url }}"
+    state: present
+    force: true
 
 - name: Install wkhtmltopdf (RedHat)
-  yum:
-    name: "{{ wkhtmltopdf_download.dest }}"
   when:
-    - wkhtmltopdf_rpm_package is failed
     - ansible_os_family == 'RedHat'
+    - "'wkhtmltopdf' not in ansible_facts.packages"
+  ansible.builtin.yum:
+    name: "{{ odoo_wkhtmltox_url }}"
+    state: present

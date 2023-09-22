@@ -1,0 +1,71 @@
+---
+pip_executable: pip3
+
+odoo_required_tools:
+    - git
+    - gnupg2
+    - python3-virtualenv
+    - rsync
+    - sudo
+    - virtualenv
+
+odoo_system_packages:
+    - fonts-inconsolata
+    - fonts-font-awesome
+    - fonts-roboto-unhinted
+    - libjs-underscore
+    - lsb-base
+    - python3-babel
+    - python3-chardet
+    - python3-dateutil
+    - python3-decorator
+    - python3-docutils
+    - python3-freezegun
+    - python3-gevent
+    - python3-greenlet
+    - python3-idna
+    - python3-jinja2
+    - python3-ldap
+    - python3-libsass
+    - python3-lxml
+    - python3-mako
+    - python3-num2words
+    - python3-ofxparse
+    - python3-passlib
+    - python3-pil
+    - python3-polib
+    - python3-psutil
+    - python3-psycopg2
+    - python3-pydot
+    - python3-pypdf2
+    - python3-qrcode
+    - python3-requests
+    - python3-serial
+    - python3-stdnum
+    - python3-tz
+    - python3-usb
+    - python3-vobject
+    - python3-werkzeug
+    - python3-xlsxwriter
+    - python3-xlrd
+    - python3-xlwt
+    - python3-zeep
+
+odoo_pip_packages:
+    - ebaysdk==2.1.5
+    - reportlab==3.5.55
+
+odoo_npm_packages:
+    - less
+    - less-plugin-clean-css
+    - rtlcss
+
+odoo_wkhtmltox_depends:
+    - libssl-dev
+    - python3-setuptools
+    - python3-renderpm
+    - xz-utils
+
+odoo_nodejs_source: "https://deb.nodesource.com/setup_20.x"
+odoo_wkhtmltox_arch: "{{ (ansible_architecture == 'aarch64' and 'arm64') or ('64' in ansible_architecture and 'amd64') or 'i386' }}"
+odoo_wkhtmltox_url: "{{ 'https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.bullseye_%s.deb' % odoo_wkhtmltox_arch }}"

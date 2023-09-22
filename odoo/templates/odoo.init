@@ -20,7 +20,8 @@
 
 PATH=/usr/local/bin:/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin
 WORKDIR={{ odoo_workdir }}
-DAEMON={{ odoo_workdir }}/{{ odoo_bin }}
+VIRTUALENV={{ odoo_virtualenv }}
+DAEMON={{ odoo_bin }}
 NAME={{ odoo_service }}
 DESC={{ odoo_service }}
 CONFIG={{ odoo_config_file }}
@@ -39,6 +40,7 @@ test -x $DAEMON || exit 0
 set -e
 
 function _start() {
+    . $VIRTUALENV/bin/activate
     start-stop-daemon --chdir=${WORKDIR} --start --quiet --pidfile $PIDFILE --chuid $USER:$USER --background --make-pidfile --exec $DAEMON -- --config $CONFIG --logfile $LOGFILE{{ odoo_config_server_wide_modules not in [False, 'None', ''] and ' --load=%s' % odoo_config_server_wide_modules or '' }}
 }
 

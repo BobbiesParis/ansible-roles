@@ -1,14 +1,15 @@
 ---
-
 - name: Create log directory
-  file:
+  ansible.builtin.file:
     path: "{{ odoo_logdir }}"
     state: directory
     owner: "{{ odoo_user }}"
     group: "{{ odoo_user }}"
-    force: no
+    mode: "u=rwx,g=rx,o=rx"
+    force: false
 
 - name: Setup logrotate configuration file
-  template:
+  ansible.builtin.template:
     src: logrotate.j2
     dest: "/etc/logrotate.d/{{ odoo_service }}"
+    mode: "u=rw,g=r,o=r"

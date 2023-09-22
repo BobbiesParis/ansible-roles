@@ -1,26 +1,33 @@
 ---
-
 - name: Generate odoo init script
-  template:
+  when: odoo_init
+  ansible.builtin.template:
     src: odoo.init
     dest: /etc/init.d/{{ odoo_service }}
     owner: root
     group: root
-    mode: 0755
+    mode: "u=rwx,g=rx,o=rx"
     force: "{{ odoo_config_force and 'yes' or 'no' }}"
-    backup: yes
-  when: odoo_init
+    backup: true
   notify: Restart Odoo
 
 - name: Reload systemd
-  systemd:
-    daemon-reload: yes
   when: ansible_service_mgr == 'systemd'
+  ansible.builtin.systemd:
+    daemon-reload: true
 
 - name: Enable odoo service
-  service:
-    name: "{{ odoo_service }}"
-    enabled: yes
-    state: started
-  become: yes
   when: odoo_init
+  ansible.builtin.service:
+    name: "{{ odoo_service }}"
+    enabled: true
+    state: started
+  become: true
+
+- name: Disable odoo service
+  when: odoo_init
+  ansible.builtin.service:
+    name: "{{ odoo_service }}"
+    enabled: false
+    state: stopped
+  become: true

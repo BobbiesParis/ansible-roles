@@ -1,32 +1,42 @@
 ---
-
 - name: Install fail2ban (Debian)
-  apt:
-    name: fail2ban
-    state: latest
-    install_recommends: no
-    update_cache: yes
   when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+    install_recommends: false
+    update_cache: true
 
 - name: Install fail2ban (RedHat)
-  yum:
-    name: fail2ban
-    state: latest
-    update_cache: yes
   when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum:
+    name: fail2ban
+    state: present
+    update_cache: true
 
 - name: Setup configuration files
   block:
-    - copy:
+    - name: Create configuration file from template
+      ansible.builtin.copy:
         src: /etc/fail2ban/jail.conf
         dest: /etc/fail2ban/jail.local
-        remote_src: yes        
-    - blockinfile:
+        remote_src: true
+        mode: "u=rw,g=r,o=r"
+    - name: Force systemd to be used
+      ansible.builtin.lineinfile:
+        path: /etc/fail2ban/jail.local
+        regexp: "backend = auto"
+        line: backend = systemd
+        state: present
+    - name: Complete the configuration file
+      ansible.builtin.blockinfile:
         insertafter: EOF
         path: /etc/fail2ban/jail.local
         block: "{{ lookup('template', 'fail2ban.jail') }}"
         marker: ""
-    - template:
+    - name: Configure Odoo filtering rules
+      ansible.builtin.template:
         src: fail2ban.filter
         dest: /etc/fail2ban/filter.d/odoo-login.local
+        mode: "u=rw,g=r,o=r"
       notify: Restart fail2ban

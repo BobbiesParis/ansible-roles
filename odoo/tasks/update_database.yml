@@ -1,8 +1,9 @@
 ---
-
 - name: Check if need to update the database
+  when: odoo_update_release_file
   block:
-    - postgresql_query:
+    - name: Query database version
+      community.postgresql.postgresql_query:
         login_host: "{{ odoo_config_db_host }}"
         port: "{{ odoo_config_db_port | int }}"
         ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -14,43 +15,47 @@
           key: code.version
       register: db_query
 
-    - set_fact:
+    - name: Get database version
+      ansible.builtin.set_fact:
         db_version: "{{ db_query.query_result and db_query.query_result[0]['value'] or '' }}"
 
-    - set_fact:
+    - name: Get code version
+      ansible.builtin.set_fact:
         code_version: "{{ lookup('ini', 'version section=options file=' + odoo_update_release_file) }}"
 
-    - set_fact:
-        to_update: True
+    - name: Detect whether the database needs updating
       when:
         - code_version
         - code_version is version(db_version, '>')
-  when: odoo_update_release_file
+      ansible.builtin.set_fact:
+        to_update: true
 
 - name: Run the database update
+  when: to_update is defined or odoo_update_modules
   block:
     - name: Backup database and filestore
-      include_tasks:
+      when: odoo_backup_database
+      ansible.builtin.include_tasks:
         file: backup_create.yml
         apply:
           tags: backup
-      when: odoo_backup_database
       tags:
         - backup
 
     - name: Make sure the log file exists
-      file:
+      ansible.builtin.file:
         path: "{{ odoo_update_logfile }}"
         state: touch
+        mode: "u=rw,g=r,o=r"
 
     - name: Get the last line of the log file
-      shell: tail -n 1 {{ odoo_update_logfile | quote }} | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
+      ansible.builtin.shell: tail -n 1 {{ odoo_update_logfile | quote }} | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
       register: start_point
 
     - name: Launch the database update in multi-threading mode
-      command:
+      ansible.builtin.command:
         argv:
-          - /usr/bin/python3
+          - "{{ odoo_virtualenv }}/bin/python"
           - "{{ odoo_bin }}"
           - --config={{ odoo_config_file }}
           - "{{ odoo_update_modules and '--update=%s' % odoo_update_modules or '--no-http' }}"
@@ -65,45 +70,44 @@
       notify: Restart Odoo
 
     - name: Get update logs
-      shell: cat {{ odoo_update_logfile | quote }} | grep 'Failed to initialize database\|Upgrade FAILED' | tail -n 1 | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
+      ansible.builtin.shell: cat {{ odoo_update_logfile | quote }} | grep 'Failed to initialize database\|Upgrade FAILED' | tail -n 1 | cut -d ' '  -f 1-2 | sed s/\\./\\\\./g
       register: end_point
 
     - name: Check if database update failed
-      set_fact:
+      ansible.builtin.set_fact:
         update_failed: "{{ end_point.stdout and end_point.stdout > start_point.stdout }}"
 
     - name: Restore backup if update failed
-      include_tasks:
-        file: backup_restore.yml
-        apply:
-          tags: backup
       when:
         - update_failed
         - odoo_backup_database
+      ansible.builtin.include_tasks:
+        file: backup_restore.yml
+        apply:
+          tags: backup
       tags:
         - backup
 
     - name: Delete backup
-      include_tasks:
+      when: odoo_backup_database
+      ansible.builtin.include_tasks:
         file: backup_remove.yml
         apply:
           tags: backup
-      when: odoo_backup_database
       tags:
         - backup
 
     - name: Fail playbook if database update failed
-      fail:
-        msg: "Odoo upgrade failed"
       when: update_failed
+      ansible.builtin.fail:
+        msg: "Odoo upgrade failed"
   always:
     - name: Change the owner of Odoo log file
-      file:
+      when: odoo_update_logfile == (odoo_logrotate and odoo_logfile or odoo_config_logfile)
+      ansible.builtin.file:
         path: "{{ odoo_update_logfile }}"
         owner: "{{ odoo_user }}"
         group: "{{ odoo_user }}"
-        force: yes
-      ignore_errors: yes
-      when: odoo_update_logfile == (odoo_logrotate and odoo_logfile or odoo_config_logfile)
-  when:
-    - to_update is defined or odoo_update_modules
+        force: true
+      ignore_errors: true
+      register: ignore_errors_odoo_change_log_file_owner

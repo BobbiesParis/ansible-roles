@@ -1,15 +1,16 @@
 ---
-
 - name: Delete database backup file
-  file:
+  when: odoo_delete_database_backup
+  ansible.builtin.file:
     path: "{{ odoo_update_database_backup }}"
     state: absent
-  ignore_errors: yes
-  when: odoo_delete_database_backup
+  ignore_errors: true
+  register: ignore_errors_odoo_delete_database_backup
 
 - name: Delete filestore copy
-  file:
+  when: odoo_delete_datadir_backup
+  ansible.builtin.file:
     path: "{{ odoo_update_datadir_backup }}"
     state: absent
-  ignore_errors: yes
-  when: odoo_delete_datadir_backup
+  ignore_errors: true
+  register: ignore_errors_odoo_delete_datadir_backup

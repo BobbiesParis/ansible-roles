@@ -1,65 +1,65 @@
 ---
-
 - name: Add the PostgreSQL signing key (Debian)
-  apt_key:
+  when: ansible_os_family == 'Debian'
+  ansible.builtin.apt_key:
     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
     state: present
-  when:
-    - ansible_os_family == 'Debian'
 
 - name: Add the PostgreSQL repository into sources list (Debian)
-  apt_repository:
+  when: ansible_os_family == 'Debian'
+  ansible.builtin.apt_repository:
     repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
     state: present
-  when:
-    - ansible_os_family == 'Debian'
 
 - name: Add the PostgreSQL repository into sources list (RedHat)
-  yum_repository:
+  when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum_repository:
     name: "pgdg{{ odoo_postgresql_version or '' }}"
-    base_url: "https://download.postgresql.org/pub/repos/yum/reporpms/EL-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}/pgdg-redhat-repo-latest.noarch.rpm"
+    baseurl: >
+      "https://download.postgresql.org/pub/repos/yum/reporpms/"
+      "EL-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}"
+      "/pgdg-redhat-repo-latest.noarch.rpm"
     state: present
-  when:
-    - ansible_os_family == 'RedHat'
 
 - name: Update APT cache (Debian)
-  apt:
-    cache_valid_time: 86400
-    update_cache: True
   when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
+    cache_valid_time: 86400
+    update_cache: true
 
 - name: Install PostgreSQL client (Debian)
-  apt:
+  when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
     name: "postgresql-client{{ odoo_postgresql_version and '-%s' % odoo_postgresql_version or '' }}"
     state: present
-  when:
-    - ansible_os_family == 'Debian'
 
 - name: Install PostgreSQL client (RedHat)
-  yum:
+  when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum:
     name: "postgresql{{ odoo_postgresql_version or '' }}"
     state: present
-  when:
-    - ansible_os_family == 'RedHat'
 
 - name: Install Ansible PostgreSQL dependencies (Debian)
-  apt:
-    name: python3-psycopg2
-    state: present
   when:
     - ansible_os_family == 'Debian'
     - odoo_postgresql_set_user or odoo_postgresql_active_unaccent
-
-- name: Install Ansible PostgreSQL dependencies (RedHat)
-  yum:
+  ansible.builtin.apt:
     name: python3-psycopg2
     state: present
+
+- name: Install Ansible PostgreSQL dependencies (RedHat)
   when:
     - ansible_os_family == 'RedHat'
     - odoo_postgresql_set_user or odoo_postgresql_active_unaccent
+  ansible.builtin.yum:
+    name: python3-psycopg2
+    state: present
 
 - name: PostgreSQL - Add or update the database user without password
-  postgresql_user:
+  when:
+    - odoo_postgresql_set_user
+    - not odoo_config_db_password
+  community.postgresql.postgresql_user:
     name: "{{ odoo_config_db_user }}"
     role_attr_flags: "{{ odoo_postgresql_user_role_attr }}"
     login_host: "{{ odoo_config_db_host }}"
@@ -67,13 +67,14 @@
     ssl_mode: "{{ odoo_config_db_sslmode }}"
     login_user: "{{ odoo_postgresql_login_user }}"
     login_password: "{{ odoo_postgresql_login_password }}"
-  ignore_errors: yes
-  when:
-    - odoo_postgresql_set_user
-    - not odoo_config_db_password
+  ignore_errors: true
+  register: ignore_errors_odoo_postgresql_user
 
 - name: PostgreSQL - Add or update the database user with password
-  postgresql_user:
+  when:
+    - odoo_postgresql_set_user
+    - odoo_config_db_password
+  community.postgresql.postgresql_user:
     name: "{{ odoo_config_db_user }}"
     role_attr_flags: "{{ odoo_postgresql_user_role_attr }}"
     password: "{{ odoo_config_db_password }}"
@@ -82,13 +83,12 @@
     ssl_mode: "{{ odoo_config_db_sslmode }}"
     login_user: "{{ odoo_postgresql_login_user }}"
     login_password: "{{ odoo_postgresql_login_password }}"
-  ignore_errors: yes
-  when:
-    - odoo_postgresql_set_user
-    - odoo_config_db_password
+  ignore_errors: true
+  register: ignore_errors_odoo_postgresql_user
 
 - name: PostgreSQL - Grant privileges
-  postgresql_membership:
+  when: odoo_postgresql_set_user
+  community.postgresql.postgresql_membership:
     login_host: "{{ odoo_config_db_host }}"
     port: "{{ odoo_config_db_port | int }}"
     ssl_mode: "{{ odoo_config_db_sslmode }}"
@@ -96,11 +96,10 @@
     login_password: "{{ odoo_postgresql_login_password }}"
     groups: "{{ odoo_config_db_user }}"
     target_roles: "{{ odoo_postgresql_login_user }}"
-  when:
-    - odoo_postgresql_set_user
 
 - name: PostgreSQL - Activate the 'unaccent' extension on databases
-  postgresql_ext:
+  when: odoo_postgresql_active_unaccent
+  community.postgresql.postgresql_ext:
     name: unaccent
     db: "{{ odoo_config_db_template }}"
     login_host: "{{ odoo_config_db_host }}"
@@ -108,4 +107,3 @@
     ssl_mode: "{{ odoo_config_db_sslmode }}"
     login_user: "{{ odoo_postgresql_login_user }}"
     login_password: "{{ odoo_postgresql_login_password }}"
-  when: odoo_postgresql_active_unaccent

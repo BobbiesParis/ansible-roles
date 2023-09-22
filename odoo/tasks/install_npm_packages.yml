@@ -1,64 +1,51 @@
 ---
-
-- name: Check if nodejs is already installed (Debian)
-  command: dpkg -l nodejs
-  become: yes
-  ignore_errors: yes
-  register: nodejs_deb_package
-  when: ansible_os_family == 'Debian'
-
-- name: Check if nodejs is already installed (RedHat)
-  command: rpm -q nodejs
-  become: yes
-  ignore_errors: yes
-  register: nodejs_rpm_package
-  when: ansible_os_family == 'RedHat'
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
 
 - name: Download nodejs sources
+  when: "'nodejs' not in ansible_facts.packages"
   get_url:
     url: "{{ odoo_nodejs_source }}"
     dest: /tmp
     mode: u+x
   register: node_script
-  when: nodejs_deb_package is failed or nodejs_rpm_package is failed
 
 - name: Install nodejs sources
+  when: node_script.changed
   shell: "{{ node_script.dest }}"
-  when: nodejs_deb_package is failed or nodejs_rpm_package is failed
 
 - name: Install nodejs (Debian)
-  apt:
+  when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
     name: nodejs
     state: present
-  when: ansible_os_family == 'Debian'
 
 - name: Install nodejs (RedHat)
-  yum:
+  when: ansible_os_family == 'RedHat'
+  ansible.builtin.yum:
     name: nodejs
     state: present
-  when: ansible_os_family == 'RedHat'
 
 - name: Check that '/usr/bin/nodejs' exists
-  stat:
+  ansible.builtin.stat:
     path: /usr/bin/nodejs
   register: nodejs_executable
 
 - name: Check that '/usr/local/bin/node' exists
-  stat:
+  ansible.builtin.stat:
     path: /usr/local/bin/node
   register: node_executable
 
 - name: Add symlink '/usr/local/bin/node'
-  file:
+  ansible.builtin.file:
     src: /usr/bin/nodejs
     dest: /usr/local/bin/node
     state: link
   when: nodejs_executable.stat.exists and not node_executable.stat.exists
 
 - name: Install Odoo dependencies (npm)
-  npm:
+  community.general.npm:
     name: "{{ item }}"
-    global: yes
-  with_flattened:
-    - "{{ odoo_npm_packages | default([]) }}"
-    - "{{ odoo_extra_npm_packages | default([]) }}"
+    global: true
+  loop: "{{ (odoo_npm_packages | default([])) + (odoo_extra_npm_packages | default([])) | flatten }}"

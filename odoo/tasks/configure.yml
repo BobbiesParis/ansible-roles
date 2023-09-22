@@ -1,60 +1,58 @@
 ---
-
 - name: Add Odoo system user
-  user:
+  when: odoo_set_user
+  ansible.builtin.user:
     name: "{{ odoo_user }}"
     shell: /bin/bash
     password: "{{ odoo_user_passwd }}"
     update_password: on_create
     system: "{{ odoo_user_system }}"
-  when: odoo_set_user
 
 - name: Configure PostgreSQL
-  include_tasks:
+  when: odoo_set_postgresql
+  ansible.builtin.include_tasks:
     file: configure_postgresql.yml
     apply:
       tags: configuration
-  when: odoo_set_postgresql
 
 - name: Configure Logrotate
-  include_tasks:
+  when: odoo_set_logrotate
+  ansible.builtin.include_tasks:
     file: configure_logrotate.yml
     apply:
       tags: configuration
-  when: odoo_set_logrotate
 
 - name: Configure Odoo
-  include_tasks:
+  when: odoo_set_configuration
+  ansible.builtin.include_tasks:
     file: configure_odoo.yml
     apply:
       tags: configuration
-  when: odoo_set_configuration
 
 - name: Configure NewRelic
-  include_tasks:
+  when: odoo_set_newrelic
+  ansible.builtin.include_tasks:
     file: configure_newrelic.yml
     apply:
       tags: packages
-  when:
-    - odoo_set_newrelic
 
 - name: Configure Nginx
-  include_tasks:
+  when: odoo_set_nginx
+  ansible.builtin.include_tasks:
     file: configure_nginx.yml
     apply:
       tags: configuration
-  when: odoo_set_nginx
 
 - name: Configure fail2ban
-  include_tasks:
+  when: odoo_set_fail2ban
+  ansible.builtin.include_tasks:
     file: configure_fail2ban.yml
     apply:
       tags: configuration
-  when: odoo_set_fail2ban
 
 - name: Configure service
-  include_tasks:
+  when: odoo_set_service
+  ansible.builtin.include_tasks:
     file: configure_service.yml
     apply:
       tags: configuration
-  when: odoo_set_service
