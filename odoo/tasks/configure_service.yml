@@ -20,7 +20,7 @@
   when: odoo_init
   ansible.builtin.service:
     name: "{{ odoo_service }}"
-    enabled: true
+    enabled: "{{ odoo_service_starts_on_boot }}"
     state: started
   become: true
 
@@ -28,6 +28,6 @@
   when: odoo_init
   ansible.builtin.service:
     name: "{{ odoo_service }}"
-    enabled: false
+    enabled: "{{ odoo_service_starts_on_boot }}"
     state: stopped
   become: true

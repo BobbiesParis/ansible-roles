@@ -1,6 +1,7 @@
 ---
 odoo_version: "14.0"
 odoo_service: odoo
+odoo_service_starts_on_boot: true
 odoo_user: odoo
 odoo_user_passwd:
 odoo_user_system: true
