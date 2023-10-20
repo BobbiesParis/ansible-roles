@@ -120,8 +120,28 @@ odoo_newrelic_region: EU
 odoo_maintenance_team: "Odoo IT team"
 odoo_nginx_cache_folder: "/var/cache/nginx/"
 odoo_nginx_client_max_body_size: 25M
+odoo_nginx_content_security_policy: >-
+  base-uri 'self';
+  connect-src 'self';
+  default-src 'self';
+  font-src 'self' https://fonts.odoocdn.com;
+  frame-ancestors 'self';
+  frame-src 'self';
+  img-src 'self' data:;
+  manifest-src 'self';
+  media-src 'self';
+  object-src 'none';
+  report-uri 'none';
+  script-src 'self' 'report-sample' 'unsafe-inline' 'unsafe-eval';
+  style-src 'self' 'report-sample' 'unsafe-inline' https://fonts.googleapis.com;
+  upgrade-insecure-requests;
+  worker-src 'none';
 odoo_nginx_document_root: "/var/www/html/"
+odoo_nginx_referrer_policy: "strict-origin-when-cross-origin"
+odoo_nginx_server_extra_config:
 odoo_nginx_server_name: "_"
+odoo_nginx_set_cookie: "/; SameSite=Lax; HTTPOnly; Secure"
+odoo_nginx_strict_transport_security: "max-age=31536000; includeSubDomains; preload"
 odoo_nginx_timeout: 720s
 odoo_nginx_trusted_ips:
 
