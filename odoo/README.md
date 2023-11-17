@@ -123,6 +123,7 @@ odoo_newrelic_environment | production
 odoo_newrelic_license_key |  
 odoo_newrelic_log_file | "/var/log/newrelic/python-agent.log"
 odoo_newrelic_region | EU
+odoo_nginx_cache_deletion | true
 odoo_nginx_cache_folder | "/var/cache/nginx"
 odoo_nginx_client_max_body_size | 25M
 odoo_nginx_document_root | "/var/www/html/"

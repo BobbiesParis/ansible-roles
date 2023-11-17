@@ -14,6 +14,13 @@
     state: present
     update_cache: true
 
+- name: Empty Nginx cache directory
+  when: odoo_nginx_cache_deletion
+  ansible.builtin.file:
+    path: "{{ odoo_nginx_cache_folder | dirname }}"
+    state: absent
+  notify: Restart Nginx
+
 - name: Create Nginx cache directory
   ansible.builtin.file:
     path: "{{ odoo_nginx_cache_folder | dirname }}"
