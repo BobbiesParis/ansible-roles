@@ -10,6 +10,7 @@
     state: dump
     target: "{{ odoo_clone_src_db_backup }}"
     target_opts: "--no-owner"
+    dump_extra_args: "{{ odoo_clone_src_db_backup_args }}"
 
 # We have to delete and then recreate the database
 # because if we use --clean --create as arguments to pg_restore,

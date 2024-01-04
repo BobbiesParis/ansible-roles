@@ -26,3 +26,4 @@
     name: "{{ odoo_config_db_name }}"
     state: dump
     target: "{{ odoo_update_database_backup }}"
+    dump_extra_args: "{{ odoo_update_database_backup_args }}"

@@ -141,6 +141,7 @@ odoo_delete_datadir_backup | false
 odoo_delete_old_lock | false
 odoo_update_datadir_backup | "{{ odoo_config_data_dir }}/../backup"
 odoo_update_database_backup | "/tmp/{{ odoo_config_db_name }}-{{ ansible_date_time.iso8601_basic_short }}.sql"
+odoo_update_database_backup_args |  
 odoo_update_lockdir | "{{ odoo_config_data_dir }}/.lock"
 odoo_update_logfile | "{{ odoo_logrotate and odoo_logfile or odoo_config_logfile }}"
 odoo_update_modules | all
@@ -156,6 +157,7 @@ odoo_clone_src_db_user |
 odoo_clone_src_db_password |  
 odoo_clone_src_db_name |  
 odoo_clone_src_db_backup | "/tmp/{{ odoo_clone_src_db_name }}-{{ ansible_date_time.iso8601_basic_short }}.dump"
+odoo_clone_src_db_backup_args |  
 odoo_clone_src_data_dir |  
 
 Precisions
