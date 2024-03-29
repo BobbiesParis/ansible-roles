@@ -17,12 +17,13 @@ This role is used by appending it to your ansible playbook:
 Odoo Version | Operating System
 :----:|:---:
 14 | debian 10 / 11
+17 | debian 12
 
 ## Available variables
 
 Variable | Default value
 ---------|--------------
-odoo_version | 14.0
+odoo_version | 17.0
 odoo_service | odoo
 odoo_service_starts_on_boot | true
 odoo_user | odoo
@@ -208,7 +209,3 @@ This role provides an handler which restart Odoo. You can use it in your own tas
   roles:
     - odoo
 ```
-
-## Roadmap
-
-* Support for Odoo v17 on debian 12
