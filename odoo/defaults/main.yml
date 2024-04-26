@@ -49,6 +49,7 @@ odoo_config_dbfilter: "{{ odoo_config_db_name and '^' + odoo_config_db_name + '$
 odoo_config_demo: {}
 odoo_config_email_from: false
 odoo_config_geoip_database: /usr/share/GeoIP/GeoLite2-City.mmdb
+odoo_config_gevent_port: 8072
 odoo_config_http_enable: true
 odoo_config_http_interface:
 odoo_config_http_port: 8069

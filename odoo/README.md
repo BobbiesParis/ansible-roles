@@ -63,6 +63,7 @@ odoo_config_dbfilter | "{{ odoo_config_db_name and '^' + odoo_config_db_name + '
 odoo_config_demo | {}
 odoo_config_email_from | false
 odoo_config_geoip_database | /usr/share/GeoIP/GeoLite2-City.mmdb
+odoo_config_longpolling_port | 8072  # from 17.0
 odoo_config_http_enable | true
 odoo_config_http_interface |  
 odoo_config_http_port | 8069
@@ -79,7 +80,7 @@ odoo_config_log_db_level | warning
 odoo_config_log_handler | :INFO
 odoo_config_log_level | info
 odoo_config_logfile | "{{ odoo_logfile }}"
-odoo_config_longpolling_port | 8072
+odoo_config_longpolling_port | 8072  # before 17.0
 odoo_config_max_cron_threads | 2
 odoo_config_osv_memory_age_limit | false
 odoo_config_osv_memory_count_limit | false
