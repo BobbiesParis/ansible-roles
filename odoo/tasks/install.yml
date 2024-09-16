@@ -1,9 +1,15 @@
 ---
 - name: Update APT cache (Debian)
+  when: ansible_os_family == 'Debian'
   ansible.builtin.apt:
     cache_valid_time: 86400
     update_cache: true
+
+- name: Update all packages to their latest version (Debian)
   when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
+    name: "*"
+    state: latest
 
 - name: Install system packages
   ansible.builtin.include_tasks:
